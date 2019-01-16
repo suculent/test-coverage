@@ -66,9 +66,9 @@
    65|      0|        delegate?.disconnected()
    66|      0|    }
    67|       |
-   68|      4|    public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
-   69|      4|        delegate?.receivedMessage(text)
-   70|      4|    }
+   68|      5|    public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+   69|      5|        delegate?.receivedMessage(text)
+   70|      5|    }
    71|       |
    72|      0|    public func websocketDidConnect(socket: WebSocket) {
    73|      0|        delegate?.didConnect()
@@ -306,15 +306,15 @@
   224|      0|        }
   225|      0|    }
   226|       |
-  227|      4|    public func receivedMessage(_ message: String) {
-  228|      4|        guard let data = message.data(using: String.Encoding.utf8) else {
+  227|      5|    public func receivedMessage(_ message: String) {
+  228|      5|        guard let data = message.data(using: String.Encoding.utf8) else {
   229|      0|            return
-  230|      4|        }
-  231|      4|
-  232|      4|        if let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any] {
-  233|      4|            dispatch(json)
-  234|      4|        }
-  235|      4|    }
+  230|      5|        }
+  231|      5|
+  232|      5|        if let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any] {
+  233|      5|            dispatch(json)
+  234|      5|        }
+  235|      5|    }
   236|       |
   237|       |    internal func dispatch(_ anEvent: [String: Any]) {
   238|       |        let event = Event(anEvent)

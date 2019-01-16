@@ -18,14 +18,22 @@
    17|      5|    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
    18|      5|        return true
    19|      5|    }
-   20|      5|
-   21|       |    func applicationDidBecomeActive(_ application: UIApplication) {
-   22|      0|        let notificationName = Notification.Name("applicationDidBecomeActive")
-   23|      0|        NotificationCenter.default.post(name: notificationName, object: nil)
-   24|      0|    }
-   25|      0|        
-   26|       |}
-   27|      0|
+   20|      5|    
+   21|       |    func applicationDidFinishLaunching(_ application: UIApplication) {
+   22|      0|        checkPasteboard()
+   23|      0|    }
+   24|      0|
+   25|      0|    func applicationDidBecomeActive(_ application: UIApplication) {
+   26|       |        checkPasteboard()
+   27|      0|    }
+   28|      0|    
+   29|      0|    func checkPasteboard() {
+   30|      0|        let notificationName = Notification.Name("applicationDidBecomeActive")
+   31|       |        NotificationCenter.default.post(name: notificationName, object: nil)
+   32|      0|    }
+   33|      0|    
+   34|      0|}
+   35|       |
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/UIPasteboard/ViewController.swift:
     1|       |//

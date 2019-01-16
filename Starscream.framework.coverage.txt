@@ -759,20 +759,20 @@
   217|      8|        
   218|      8|        var out = timeout// wait X seconds before giving up
   219|      8|        FoundationStream.sharedWorkQueue.async { [weak self] in
-  220|  4.05k|            while !outStream.hasSpaceAvailable {
-  221|  4.04k|                usleep(100) // wait until the socket is ready
-  222|  4.04k|                out -= 100
-  223|  4.04k|                if out < 0 {
+  220|  3.06k|            while !outStream.hasSpaceAvailable {
+  221|  3.05k|                usleep(100) // wait until the socket is ready
+  222|  3.05k|                out -= 100
+  223|  3.05k|                if out < 0 {
   224|      0|                    completion(WSError(type: .writeTimeoutError, message: "Timed out waiting for the socket to be ready for a write", code: 0))
   225|      0|                    return
-  226|  4.04k|                } else if let error = outStream.streamError {
+  226|  3.05k|                } else if let error = outStream.streamError {
   227|      0|                    completion(error)
   228|      0|                    return // disconnectStream will be called.
-  229|  4.04k|                } else if self == nil {
+  229|  3.05k|                } else if self == nil {
   230|      0|                    completion(WSError(type: .closeError, message: "socket object has been dereferenced", code: 0))
   231|      0|                    return
-  232|  4.04k|                }
-  233|  4.04k|            }
+  232|  3.05k|                }
+  233|  3.05k|            }
   234|      8|            completion(nil) //success!
   235|      8|        }
   236|      8|    }
@@ -783,16 +783,16 @@
   241|      8|        return outStream.write(buffer, maxLength: data.count)
   242|      8|    }
   243|       |    
-  244|     12|    public func read() -> Data? {
-  245|     12|        guard let stream = inputStream else {return nil}
-  246|     12|        let buf = NSMutableData(capacity: BUFFER_MAX)
-  247|     12|        let buffer = UnsafeMutableRawPointer(mutating: buf!.bytes).assumingMemoryBound(to: UInt8.self)
-  248|     12|        let length = stream.read(buffer, maxLength: BUFFER_MAX)
-  249|     12|        if length < 1 {
+  244|     14|    public func read() -> Data? {
+  245|     14|        guard let stream = inputStream else {return nil}
+  246|     14|        let buf = NSMutableData(capacity: BUFFER_MAX)
+  247|     14|        let buffer = UnsafeMutableRawPointer(mutating: buf!.bytes).assumingMemoryBound(to: UInt8.self)
+  248|     14|        let length = stream.read(buffer, maxLength: BUFFER_MAX)
+  249|     14|        if length < 1 {
   250|      0|            return nil
-  251|     12|        }
-  252|     12|        return Data(bytes: buffer, count: length)
-  253|     12|    }
+  251|     14|        }
+  252|     14|        return Data(bytes: buffer, count: length)
+  253|     14|    }
   254|       |    
   255|      8|    public func cleanup() {
   256|      8|        if let stream = inputStream {
@@ -836,17 +836,17 @@
   294|       |    /**
   295|       |     Delegate for the stream methods. Processes incoming bytes
   296|       |     */
-  297|     41|    open func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
-  298|     41|        if eventCode == .hasBytesAvailable {
-  299|     12|            if aStream == inputStream {
-  300|     12|                delegate?.newBytesInStream()
-  301|     12|            }
-  302|     41|        } else if eventCode == .errorOccurred {
+  297|     42|    open func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
+  298|     42|        if eventCode == .hasBytesAvailable {
+  299|     14|            if aStream == inputStream {
+  300|     14|                delegate?.newBytesInStream()
+  301|     14|            }
+  302|     42|        } else if eventCode == .errorOccurred {
   303|      0|            delegate?.streamDidError(error: aStream.streamError)
-  304|     41|        } else if eventCode == .endEncountered {
+  304|     42|        } else if eventCode == .endEncountered {
   305|      0|            delegate?.streamDidError(error: nil)
-  306|     41|        }
-  307|     41|    }
+  306|     42|        }
+  307|     42|    }
   308|       |}
   309|       |
   310|       |//WebSocket implementation
@@ -924,9 +924,9 @@
   382|       |        var bytesLeft = 0
   383|       |        public var frameCount = 0
   384|       |        public var buffer: NSMutableData?
-  385|      4|        public let firstFrame = {
-  386|      4|            return Date()
-  387|      4|        }()
+  385|      6|        public let firstFrame = {
+  386|      6|            return Date()
+  387|      6|        }()
   388|       |    }
   389|       |
   390|       |    // MARK: - Delegates
@@ -997,12 +997,12 @@
   455|       |    private var didDisconnect = false
   456|       |    private var readyToWrite = false
   457|       |    private var headerSecKey = ""
-  458|     12|    private var canDispatch: Bool {
-  459|     12|        mutex.lock()
-  460|     12|        let canWork = readyToWrite
-  461|     12|        mutex.unlock()
-  462|     12|        return canWork
-  463|     12|    }
+  458|     14|    private var canDispatch: Bool {
+  459|     14|        mutex.lock()
+  460|     14|        let canWork = readyToWrite
+  461|     14|        mutex.unlock()
+  462|     14|        return canWork
+  463|     14|    }
   464|       |    
   465|       |    /// Used for setting protocols.
   466|      8|    public init(request: URLRequest, protocols: [String]? = nil, stream: WSStream = FoundationStream()) {
@@ -1253,9 +1253,9 @@
   711|       |     Delegate for the stream methods. Processes incoming bytes
   712|       |     */
   713|       |    
-  714|     12|    public func newBytesInStream() {
-  715|     12|        processInputStream()
-  716|     12|    }
+  714|     14|    public func newBytesInStream() {
+  715|     14|        processInputStream()
+  716|     14|    }
   717|       |    
   718|      0|    public func streamDidError(error: Error?) {
   719|      0|        disconnectStream(error)
@@ -1291,44 +1291,44 @@
   749|       |    /**
   750|       |     Handles the incoming bytes and sending them to the proper processing method.
   751|       |     */
-  752|     12|    private func processInputStream() {
-  753|     12|        let data = stream.read()
-  754|     12|        guard let d = data else { return }
-  755|     12|        var process = false
-  756|     12|        if inputQueue.count == 0 {
-  757|     12|            process = true
-  758|     12|        }
-  759|     12|        inputQueue.append(d)
-  760|     12|        if process {
-  761|     12|            dequeueInput()
-  762|     12|        }
-  763|     12|    }
+  752|     14|    private func processInputStream() {
+  753|     14|        let data = stream.read()
+  754|     14|        guard let d = data else { return }
+  755|     14|        var process = false
+  756|     14|        if inputQueue.count == 0 {
+  757|     14|            process = true
+  758|     14|        }
+  759|     14|        inputQueue.append(d)
+  760|     14|        if process {
+  761|     14|            dequeueInput()
+  762|     14|        }
+  763|     14|    }
   764|       |
   765|       |    /**
   766|       |     Dequeue the incoming input so it is processed in order.
   767|       |     */
-  768|     12|    private func dequeueInput() {
-  769|     24|        while !inputQueue.isEmpty {
-  770|     12|            autoreleasepool {
-  771|     12|                let data = inputQueue[0]
-  772|     12|                var work = data
-  773|     12|                if let buffer = fragBuffer {
+  768|     14|    private func dequeueInput() {
+  769|     28|        while !inputQueue.isEmpty {
+  770|     14|            autoreleasepool {
+  771|     14|                let data = inputQueue[0]
+  772|     14|                var work = data
+  773|     14|                if let buffer = fragBuffer {
   774|      0|                    var combine = NSData(data: buffer) as Data
   775|      0|                    combine.append(data)
   776|      0|                    work = combine
   777|      0|                    fragBuffer = nil
-  778|     12|                }
-  779|     12|                let buffer = UnsafeRawPointer((work as NSData).bytes).assumingMemoryBound(to: UInt8.self)
-  780|     12|                let length = work.count
-  781|     12|                if !connected {
+  778|     14|                }
+  779|     14|                let buffer = UnsafeRawPointer((work as NSData).bytes).assumingMemoryBound(to: UInt8.self)
+  780|     14|                let length = work.count
+  781|     14|                if !connected {
   782|      8|                    processTCPHandshake(buffer, bufferLen: length)
-  783|     12|                } else {
-  784|      4|                    processRawMessagesInBuffer(buffer, bufferLen: length)
-  785|     12|                }
-  786|     12|                inputQueue = inputQueue.filter{ $0 != data }
-  787|     12|            }
-  788|     12|        }
-  789|     12|    }
+  783|     14|                } else {
+  784|      6|                    processRawMessagesInBuffer(buffer, bufferLen: length)
+  785|     14|                }
+  786|     14|                inputQueue = inputQueue.filter{ $0 != data }
+  787|     14|            }
+  788|     14|        }
+  789|     14|    }
   790|       |
   791|       |    /**
   792|       |     Handle checking the inital connection status
@@ -1511,15 +1511,15 @@
   969|       |    /**
   970|       |     Process one message at the start of `buffer`. Return another buffer (sharing storage) that contains the leftover contents of `buffer` that I didn't process.
   971|       |     */
-  972|      4|    private func processOneRawMessage(inBuffer buffer: UnsafeBufferPointer<UInt8>) -> UnsafeBufferPointer<UInt8> {
-  973|      4|        let response = readStack.last
-  974|      4|        guard let baseAddress = buffer.baseAddress else {return emptyBuffer}
-  975|      4|        let bufferLen = buffer.count
-  976|      4|        if response != nil && bufferLen < 2 {
+  972|      6|    private func processOneRawMessage(inBuffer buffer: UnsafeBufferPointer<UInt8>) -> UnsafeBufferPointer<UInt8> {
+  973|      6|        let response = readStack.last
+  974|      6|        guard let baseAddress = buffer.baseAddress else {return emptyBuffer}
+  975|      6|        let bufferLen = buffer.count
+  976|      6|        if response != nil && bufferLen < 2 {
   977|      0|            fragBuffer = Data(buffer: buffer)
   978|      0|            return emptyBuffer
-  979|      4|        }
-  980|      4|        if let response = response, response.bytesLeft > 0 {
+  979|      6|        }
+  980|      6|        if let response = response, response.bytesLeft > 0 {
   981|      0|            var len = response.bytesLeft
   982|      0|            var extra = bufferLen - response.bytesLeft
   983|      0|            if response.bytesLeft > bufferLen {
@@ -1530,38 +1530,38 @@
   988|      0|            response.buffer?.append(Data(bytes: baseAddress, count: len))
   989|      0|            _ = processResponse(response)
   990|      0|            return buffer.fromOffset(bufferLen - extra)
-  991|      4|        } else {
-  992|      4|            let isFin = (FinMask & baseAddress[0])
-  993|      4|            let receivedOpcodeRawValue = (OpCodeMask & baseAddress[0])
-  994|      4|            let receivedOpcode = OpCode(rawValue: receivedOpcodeRawValue)
-  995|      4|            let isMasked = (MaskMask & baseAddress[1])
-  996|      4|            let payloadLen = (PayloadLenMask & baseAddress[1])
-  997|      4|            var offset = 2
-  998|      4|            if compressionState.supportsCompression && receivedOpcode != .continueFrame {
+  991|      6|        } else {
+  992|      6|            let isFin = (FinMask & baseAddress[0])
+  993|      6|            let receivedOpcodeRawValue = (OpCodeMask & baseAddress[0])
+  994|      6|            let receivedOpcode = OpCode(rawValue: receivedOpcodeRawValue)
+  995|      6|            let isMasked = (MaskMask & baseAddress[1])
+  996|      6|            let payloadLen = (PayloadLenMask & baseAddress[1])
+  997|      6|            var offset = 2
+  998|      6|            if compressionState.supportsCompression && receivedOpcode != .continueFrame {
   999|      0|                compressionState.messageNeedsDecompression = (RSV1Mask & baseAddress[0]) > 0
- 1000|      4|            }
- 1001|      4|            if (isMasked > 0 || (RSVMask & baseAddress[0]) > 0) && receivedOpcode != .pong && !compressionState.messageNeedsDecompression {
+ 1000|      6|            }
+ 1001|      6|            if (isMasked > 0 || (RSVMask & baseAddress[0]) > 0) && receivedOpcode != .pong && !compressionState.messageNeedsDecompression {
  1002|      0|                let errCode = CloseCode.protocolError.rawValue
  1003|      0|                doDisconnect(WSError(type: .protocolError, message: "masked and rsv data is not currently supported", code: Int(errCode)))
  1004|      0|                writeError(errCode)
  1005|      0|                return emptyBuffer
- 1006|      4|            }
- 1007|      4|            let isControlFrame = (receivedOpcode == .connectionClose || receivedOpcode == .ping)
- 1008|      4|            if !isControlFrame && (receivedOpcode != .binaryFrame && receivedOpcode != .continueFrame &&
- 1009|      4|                receivedOpcode != .textFrame && receivedOpcode != .pong) {
+ 1006|      6|            }
+ 1007|      6|            let isControlFrame = (receivedOpcode == .connectionClose || receivedOpcode == .ping)
+ 1008|      6|            if !isControlFrame && (receivedOpcode != .binaryFrame && receivedOpcode != .continueFrame &&
+ 1009|      6|                receivedOpcode != .textFrame && receivedOpcode != .pong) {
  1010|      0|                    let errCode = CloseCode.protocolError.rawValue
  1011|      0|                    doDisconnect(WSError(type: .protocolError, message: "unknown opcode: \(receivedOpcodeRawValue)", code: Int(errCode)))
  1012|      0|                    writeError(errCode)
  1013|      0|                    return emptyBuffer
- 1014|      4|            }
- 1015|      4|            if isControlFrame && isFin == 0 {
+ 1014|      6|            }
+ 1015|      6|            if isControlFrame && isFin == 0 {
  1016|      0|                let errCode = CloseCode.protocolError.rawValue
  1017|      0|                doDisconnect(WSError(type: .protocolError, message: "control frames can't be fragmented", code: Int(errCode)))
  1018|      0|                writeError(errCode)
  1019|      0|                return emptyBuffer
- 1020|      4|            }
- 1021|      4|            var closeCode = CloseCode.normal.rawValue
- 1022|      4|            if receivedOpcode == .connectionClose {
+ 1020|      6|            }
+ 1021|      6|            var closeCode = CloseCode.normal.rawValue
+ 1022|      6|            if receivedOpcode == .connectionClose {
  1023|      0|                if payloadLen == 1 {
  1024|      0|                    closeCode = CloseCode.protocolError.rawValue
  1025|      0|                } else if payloadLen > 1 {
@@ -1575,33 +1575,33 @@
  1033|      0|                    writeError(closeCode)
  1034|      0|                    return emptyBuffer
  1035|      0|                }
- 1036|      4|            } else if isControlFrame && payloadLen > 125 {
+ 1036|      6|            } else if isControlFrame && payloadLen > 125 {
  1037|      0|                writeError(CloseCode.protocolError.rawValue)
  1038|      0|                return emptyBuffer
- 1039|      4|            }
- 1040|      4|            var dataLength = UInt64(payloadLen)
- 1041|      4|            if dataLength == 127 {
+ 1039|      6|            }
+ 1040|      6|            var dataLength = UInt64(payloadLen)
+ 1041|      6|            if dataLength == 127 {
  1042|      0|                dataLength = WebSocket.readUint64(baseAddress, offset: offset)
  1043|      0|                offset += MemoryLayout<UInt64>.size
- 1044|      4|            } else if dataLength == 126 {
+ 1044|      6|            } else if dataLength == 126 {
  1045|      0|                dataLength = UInt64(WebSocket.readUint16(baseAddress, offset: offset))
  1046|      0|                offset += MemoryLayout<UInt16>.size
- 1047|      4|            }
- 1048|      4|            if bufferLen < offset || UInt64(bufferLen - offset) < dataLength {
+ 1047|      6|            }
+ 1048|      6|            if bufferLen < offset || UInt64(bufferLen - offset) < dataLength {
  1049|      0|                fragBuffer = Data(bytes: baseAddress, count: bufferLen)
  1050|      0|                return emptyBuffer
- 1051|      4|            }
- 1052|      4|            var len = dataLength
- 1053|      4|            if dataLength > UInt64(bufferLen) {
+ 1051|      6|            }
+ 1052|      6|            var len = dataLength
+ 1053|      6|            if dataLength > UInt64(bufferLen) {
  1054|      0|                len = UInt64(bufferLen-offset)
- 1055|      4|            }
- 1056|      4|            if receivedOpcode == .connectionClose && len > 0 {
+ 1055|      6|            }
+ 1056|      6|            if receivedOpcode == .connectionClose && len > 0 {
  1057|      0|                let size = MemoryLayout<UInt16>.size
  1058|      0|                offset += size
  1059|      0|                len -= UInt64(size)
- 1060|      4|            }
- 1061|      4|            let data: Data
- 1062|      4|            if compressionState.messageNeedsDecompression, let decompressor = compressionState.decompressor {
+ 1060|      6|            }
+ 1061|      6|            let data: Data
+ 1062|      6|            if compressionState.messageNeedsDecompression, let decompressor = compressionState.decompressor {
  1063|      0|                do {
  1064|      0|                    data = try decompressor.decompress(bytes: baseAddress+offset, count: Int(len), finish: isFin > 0)
  1065|      0|                    if isFin > 0 && compressionState.serverNoContextTakeover {
@@ -1614,11 +1614,11 @@
  1072|      0|                    writeError(closeCode)
  1073|      0|                    return emptyBuffer
  1074|      0|                }
- 1075|      4|            } else {
- 1076|      4|                data = Data(bytes: baseAddress+offset, count: Int(len))
- 1077|      4|            }
- 1078|      4|
- 1079|      4|            if receivedOpcode == .connectionClose {
+ 1075|      6|            } else {
+ 1076|      6|                data = Data(bytes: baseAddress+offset, count: Int(len))
+ 1077|      6|            }
+ 1078|      6|
+ 1079|      6|            if receivedOpcode == .connectionClose {
  1080|      0|                var closeReason = "connection closed by server"
  1081|      0|                if let customCloseReason = String(data: data, encoding: .utf8) {
  1082|      0|                    closeReason = customCloseReason
@@ -1628,8 +1628,8 @@
  1086|      0|                doDisconnect(WSError(type: .protocolError, message: closeReason, code: Int(closeCode)))
  1087|      0|                writeError(closeCode)
  1088|      0|                return emptyBuffer
- 1089|      4|            }
- 1090|      4|            if receivedOpcode == .pong {
+ 1089|      6|            }
+ 1090|      6|            if receivedOpcode == .pong {
  1091|      0|                if canDispatch {
  1092|      0|                    callbackQueue.async { [weak self] in
  1093|      0|                        guard let self = self else { return }
@@ -1639,31 +1639,31 @@
  1097|      0|                    }
  1098|      0|                }
  1099|      0|                return buffer.fromOffset(offset + Int(len))
- 1100|      4|            }
- 1101|      4|            var response = readStack.last
- 1102|      4|            if isControlFrame {
+ 1100|      6|            }
+ 1101|      6|            var response = readStack.last
+ 1102|      6|            if isControlFrame {
  1103|      0|                response = nil // Don't append pings.
- 1104|      4|            }
- 1105|      4|            if isFin == 0 && receivedOpcode == .continueFrame && response == nil {
+ 1104|      6|            }
+ 1105|      6|            if isFin == 0 && receivedOpcode == .continueFrame && response == nil {
  1106|      0|                let errCode = CloseCode.protocolError.rawValue
  1107|      0|                doDisconnect(WSError(type: .protocolError, message: "continue frame before a binary or text frame", code: Int(errCode)))
  1108|      0|                writeError(errCode)
  1109|      0|                return emptyBuffer
- 1110|      4|            }
- 1111|      4|            var isNew = false
- 1112|      4|            if response == nil {
- 1113|      4|                if receivedOpcode == .continueFrame {
+ 1110|      6|            }
+ 1111|      6|            var isNew = false
+ 1112|      6|            if response == nil {
+ 1113|      6|                if receivedOpcode == .continueFrame {
  1114|      0|                    let errCode = CloseCode.protocolError.rawValue
  1115|      0|                    doDisconnect(WSError(type: .protocolError, message: "first frame can't be a continue frame", code: Int(errCode)))
  1116|      0|                    writeError(errCode)
  1117|      0|                    return emptyBuffer
- 1118|      4|                }
- 1119|      4|                isNew = true
- 1120|      4|                response = WSResponse()
- 1121|      4|                response!.code = receivedOpcode!
- 1122|      4|                response!.bytesLeft = Int(dataLength)
- 1123|      4|                response!.buffer = NSMutableData(data: data)
- 1124|      4|            } else {
+ 1118|      6|                }
+ 1119|      6|                isNew = true
+ 1120|      6|                response = WSResponse()
+ 1121|      6|                response!.code = receivedOpcode!
+ 1122|      6|                response!.bytesLeft = Int(dataLength)
+ 1123|      6|                response!.buffer = NSMutableData(data: data)
+ 1124|      6|            } else {
  1125|      0|                if receivedOpcode == .continueFrame {
  1126|      0|                    response!.bytesLeft = Int(dataLength)
  1127|      0|                } else {
@@ -1673,59 +1673,59 @@
  1131|      0|                    return emptyBuffer
  1132|      0|                }
  1133|      0|                response!.buffer!.append(data)
- 1134|      4|            }
- 1135|      4|            if let response = response {
- 1136|      4|                response.bytesLeft -= Int(len)
- 1137|      4|                response.frameCount += 1
- 1138|      4|                response.isFin = isFin > 0 ? true : false
- 1139|      4|                if isNew {
- 1140|      4|                    readStack.append(response)
- 1141|      4|                }
- 1142|      4|                _ = processResponse(response)
- 1143|      4|            }
- 1144|      4|
- 1145|      4|            let step = Int(offset + numericCast(len))
- 1146|      4|            return buffer.fromOffset(step)
- 1147|      4|        }
+ 1134|      6|            }
+ 1135|      6|            if let response = response {
+ 1136|      6|                response.bytesLeft -= Int(len)
+ 1137|      6|                response.frameCount += 1
+ 1138|      6|                response.isFin = isFin > 0 ? true : false
+ 1139|      6|                if isNew {
+ 1140|      6|                    readStack.append(response)
+ 1141|      6|                }
+ 1142|      6|                _ = processResponse(response)
+ 1143|      6|            }
+ 1144|      6|
+ 1145|      6|            let step = Int(offset + numericCast(len))
+ 1146|      6|            return buffer.fromOffset(step)
+ 1147|      6|        }
  1148|      0|    }
  1149|       |
  1150|       |    /**
  1151|       |     Process all messages in the buffer if possible.
  1152|       |     */
- 1153|      4|    private func processRawMessagesInBuffer(_ pointer: UnsafePointer<UInt8>, bufferLen: Int) {
- 1154|      4|        var buffer = UnsafeBufferPointer(start: pointer, count: bufferLen)
- 1155|      4|        repeat {
- 1156|      4|            buffer = processOneRawMessage(inBuffer: buffer)
- 1157|      4|        } while buffer.count >= 2
- 1158|      4|        if buffer.count > 0 {
+ 1153|      6|    private func processRawMessagesInBuffer(_ pointer: UnsafePointer<UInt8>, bufferLen: Int) {
+ 1154|      6|        var buffer = UnsafeBufferPointer(start: pointer, count: bufferLen)
+ 1155|      6|        repeat {
+ 1156|      6|            buffer = processOneRawMessage(inBuffer: buffer)
+ 1157|      6|        } while buffer.count >= 2
+ 1158|      6|        if buffer.count > 0 {
  1159|      0|            fragBuffer = Data(buffer: buffer)
- 1160|      4|        }
- 1161|      4|    }
+ 1160|      6|        }
+ 1161|      6|    }
  1162|       |
  1163|       |    /**
  1164|       |     Process the finished response of a buffer.
  1165|       |     */
- 1166|      4|    private func processResponse(_ response: WSResponse) -> Bool {
- 1167|      4|        if response.isFin && response.bytesLeft <= 0 {
- 1168|      4|            if response.code == .ping {
+ 1166|      6|    private func processResponse(_ response: WSResponse) -> Bool {
+ 1167|      6|        if response.isFin && response.bytesLeft <= 0 {
+ 1168|      6|            if response.code == .ping {
  1169|      0|                if respondToPingWithPong {
  1170|      0|                    let data = response.buffer! // local copy so it is perverse for writing
  1171|      0|                    dequeueWrite(data as Data, code: .pong)
  1172|      0|                }
- 1173|      4|            } else if response.code == .textFrame {
- 1174|      4|                guard let str = String(data: response.buffer! as Data, encoding: .utf8) else {
+ 1173|      6|            } else if response.code == .textFrame {
+ 1174|      6|                guard let str = String(data: response.buffer! as Data, encoding: .utf8) else {
  1175|      0|                    writeError(CloseCode.encoding.rawValue)
  1176|      0|                    return false
- 1177|      4|                }
- 1178|      4|                if canDispatch {
- 1179|      4|                    callbackQueue.async { [weak self] in
- 1180|      4|                        guard let self = self else { return }
- 1181|      4|                        self.onText?(str)
- 1182|      4|                        self.delegate?.websocketDidReceiveMessage(socket: self, text: str)
- 1183|      4|                        self.advancedDelegate?.websocketDidReceiveMessage(socket: self, text: str, response: response)
- 1184|      4|                    }
- 1185|      4|                }
- 1186|      4|            } else if response.code == .binaryFrame {
+ 1177|      6|                }
+ 1178|      6|                if canDispatch {
+ 1179|      6|                    callbackQueue.async { [weak self] in
+ 1180|      5|                        guard let self = self else { return }
+ 1181|      5|                        self.onText?(str)
+ 1182|      5|                        self.delegate?.websocketDidReceiveMessage(socket: self, text: str)
+ 1183|      5|                        self.advancedDelegate?.websocketDidReceiveMessage(socket: self, text: str, response: response)
+ 1184|      5|                    }
+ 1185|      6|                }
+ 1186|      6|            } else if response.code == .binaryFrame {
  1187|      0|                if canDispatch {
  1188|      0|                    let data = response.buffer! // local copy so it is perverse for writing
  1189|      0|                    callbackQueue.async { [weak self] in
@@ -1735,12 +1735,12 @@
  1193|      0|                        self.advancedDelegate?.websocketDidReceiveData(socket: self, data: data as Data, response: response)
  1194|      0|                    }
  1195|      0|                }
- 1196|      4|            }
- 1197|      4|            readStack.removeLast()
- 1198|      4|            return true
- 1199|      4|        }
+ 1196|      6|            }
+ 1197|      6|            readStack.removeLast()
+ 1198|      6|            return true
+ 1199|      6|        }
  1200|      0|        return false
- 1201|      4|    }
+ 1201|      6|    }
  1202|       |
  1203|       |    /**
  1204|       |     Write an error to the socket

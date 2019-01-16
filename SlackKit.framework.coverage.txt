@@ -124,11 +124,11 @@
   101|      8|        clients[instance.token]?.client?.initialSetup(JSON: json)
   102|      8|    }
   103|       |
-  104|      4|    public func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI) {
-  105|      4|        let clientConnection = clients[instance.token]
-  106|      4|        clientConnection?.client?.notificationForEvent(event, type: type)
-  107|      4|        executeCallbackForEvent(event, type: type, clientConnection: clientConnection)
-  108|      4|    }
+  104|      5|    public func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI) {
+  105|      5|        let clientConnection = clients[instance.token]
+  106|      5|        clientConnection?.client?.notificationForEvent(event, type: type)
+  107|      5|        executeCallbackForEvent(event, type: type, clientConnection: clientConnection)
+  108|      5|    }
   109|       |
   110|      0|    public func connectionClosed(with error: Error, instance: SKRTMAPI) {}
   111|       |
@@ -138,7 +138,7 @@
   115|     10|    }
   116|       |
   117|       |    private func executeCallbackForEvent(_ event: Event, type: EventType, clientConnection: ClientConnection?) {
-  118|      4|        let cbs = callbacks.filter {$0.0 == type}
+  118|      5|        let cbs = callbacks.filter {$0.0 == type}
   119|       |        for callback in cbs {
   120|       |            callback.1(event, clientConnection)
   121|       |        }
