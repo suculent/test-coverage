@@ -1,7 +1,7 @@
 # .slather.yml
 
 coverage_service: cobertura_xml
-xcodeproj: UIPasteboard.xcproject
+workspace: UIPasteboard.xcworkspace
 scheme: UIPasteboard
 configuration: Debug
 source_directory: .
