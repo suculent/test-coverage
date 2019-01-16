@@ -1,0 +1,67 @@
+    1|       |//
+    2|       |//  UIPasteboardUITests.swift
+    3|       |//  UIPasteboardUITests
+    4|       |//
+    5|       |//  Created by This is Terminator on 16/01/2019.
+    6|       |//  Copyright © 2019 Deleted. All rights reserved.
+    7|       |//
+    8|       |
+    9|       |import XCTest
+   10|       |
+   11|       |import UIKit
+   12|       |
+   13|       |
+   14|       |
+   15|       |class UIPasteboardUITests: XCTestCase {
+   16|       |    
+   17|       |    var pasteboard = UIPasteboard.general
+   18|       |    
+   19|      4|    override func setUp() {
+   20|      4|        // Put setup code here. This method is called before the invocation of each test method in the class.
+   21|      4|
+   22|      4|        // In UI tests it is usually best to stop immediately when a failure occurs.
+   23|      4|        continueAfterFailure = false
+   24|      4|
+   25|      4|        // UI tests must launch the application that they test. Doing this in setup will make sure it happens for each test method.
+   26|      4|        XCUIApplication().launch()
+   27|      4|
+   28|      4|        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+   29|      4|        
+   30|      4|        pasteboard = UIPasteboard.general
+   31|      4|        pasteboard.string = "#@©|<3∆"
+   32|      4|        pasteboard.url = URL(string: "https://rtm.thinx.cloud")
+   33|      4|        //pasteboard.image = UIImage()
+   34|      4|        //pasteboard.setData(UIImage().pngData()!, forPasteboardType: "png")
+   35|      4|        pasteboard.color = UIColor.red
+   36|      4|    }
+   37|       |
+   38|      4|    override func tearDown() {
+   39|      4|        // Put teardown code here. This method is called after the invocation of each test method in the class.
+   40|      4|    }
+   41|       |
+   42|      1|    func testStrings() {
+   43|      1|        if pasteboard.hasStrings {
+   44|      0|            print("The pasteboard has Strings!")
+   45|      1|        }
+   46|      1|    }
+   47|       |    
+   48|      1|    func testURLs() {
+   49|      1|        if pasteboard.hasURLs {
+   50|      0|            print("The pasteboard has URLs!")
+   51|      1|        }
+   52|      1|    }
+   53|       |    
+   54|      1|    func testImages() {
+   55|      1|        if pasteboard.hasImages {
+   56|      0|            print("The pasteboard has images!")
+   57|      1|        }
+   58|      1|    }
+   59|       |    
+   60|      1|    func testColors() {
+   61|      1|        if pasteboard.hasColors {
+   62|      1|            print("The pasteboard has colors!")
+   63|      1|        }        
+   64|      1|    }
+   65|       |
+   66|       |}
+

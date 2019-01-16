@@ -1,0 +1,12 @@
+# .slather.yml
+
+coverage_service: cobertura_xml
+xcodeproj: UIPasteboard.xcproject
+scheme: UIPasteboard
+configuration: Debug
+source_directory: .
+output_directory: ./xml_report
+ignore:
+  - UIPasteboardTests/*
+  - UIPasteboardUITests/*
+  - Pods/*
