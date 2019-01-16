@@ -8,8 +8,14 @@
 
 import XCTest
 
-class UIPasteboardUITests: XCTestCase {
+import UIKit
 
+
+
+class UIPasteboardUITests: XCTestCase {
+    
+    var pasteboard = UIPasteboard.general
+    
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
 
@@ -20,15 +26,41 @@ class UIPasteboardUITests: XCTestCase {
         XCUIApplication().launch()
 
         // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        
+        pasteboard = UIPasteboard.general
+        pasteboard.string = "#@©|<3∆"
+        pasteboard.url = URL(string: "https://rtm.thinx.cloud")
+        //pasteboard.image = UIImage()
+        //pasteboard.setData(UIImage().pngData()!, forPasteboardType: "png")
+        pasteboard.color = UIColor.red
     }
 
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() {
-        // Use recording to get started writing UI tests.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+    func testStrings() {
+        if pasteboard.hasStrings {
+            print("The pasteboard has Strings!")
+        }
+    }
+    
+    func testURLs() {
+        if pasteboard.hasURLs {
+            print("The pasteboard has URLs!")
+        }
+    }
+    
+    func testImages() {
+        if pasteboard.hasImages {
+            print("The pasteboard has images!")
+        }
+    }
+    
+    func testColors() {
+        if pasteboard.hasColors {
+            print("The pasteboard has colors!")
+        }        
     }
 
 }
