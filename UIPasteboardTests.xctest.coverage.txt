@@ -10,26 +10,44 @@
    10|       |@testable import UIPasteboard
    11|       |
    12|       |class UIPasteboardTests: XCTestCase {
-   13|       |
-   14|      2|    override func setUp() {
-   15|      2|        // Put setup code here. This method is called before the invocation of each test method in the class.
-   16|      2|    }
-   17|       |
-   18|      2|    override func tearDown() {
-   19|      2|        // Put teardown code here. This method is called after the invocation of each test method in the class.
-   20|      2|    }
-   21|       |
-   22|      1|    func testExample() {
-   23|      1|        // This is an example of a functional test case.
-   24|      1|        // Use XCTAssert and related functions to verify your tests produce the correct results.
-   25|      1|    }
-   26|       |
-   27|      1|    func testPerformanceExample() {
-   28|      1|        // This is an example of a performance test case.
-   29|     10|        self.measure {
-   30|     10|            // Put the code you want to measure the time of here.
-   31|     10|        }
-   32|      1|    }
-   33|       |
-   34|       |}
+   13|       |    
+   14|      2|    let vc = ViewController()
+   15|      2|
+   16|      2|    override func setUp() {
+   17|       |        // Put setup code here. This method is called before the invocation of each test method in the class.
+   18|      2|        vc.initSlack()
+   19|      2|    }
+   20|      2|
+   21|       |    override func tearDown() {
+   22|      1|        // Put teardown code here. This method is called after the invocation of each test method in the class.
+   23|      1|    }
+   24|      1|    
+   25|      1|    func testUntestableExample() {
+   26|       |        // This example test SHOULD NOT be repeatable... should send same string only once, but do not report this as test failure.
+   27|      1|        vc.untestableExample(false)
+   28|      1|    }
+   29|     10|    
+   30|     10|    func testReadPasteboard() {
+   31|     10|        // This example test SHOULD NOT be repeatable... should send same string only once, but do not report this as test failure.
+   32|      1|        vc.readPasteboard()
+   33|       |    }
+   34|       |
+   35|       |    func testSendPasteboard() {
+   36|       |        // This example test SHOULD NOT be repeatable... should send same string only once, but do not report this as test failure.
+   37|       |        vc.sendSlack(string: "unique-string")
+   38|       |    }
+   39|       |    
+   40|       |    func testSendSlack() {
+   41|       |        // This example test SHOULD NOT be repeatable... should send same string only once, but do not report this as test failure.
+   42|       |        vc.sendPasteboard()
+   43|       |    }
+   44|       |
+   45|       |    func testSendPerformanceExample() {
+   46|       |        // This is an example of a performance test case.
+   47|       |        self.measure {
+   48|       |            vc.sendSlack(string: "unique-string")
+   49|       |        }
+   50|       |    }
+   51|       |
+   52|       |}
 

@@ -1,0 +1,872 @@
+    1|       |//
+    2|       |// Client.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |#if os(Linux)
+   25|       |import Dispatch
+   26|       |#endif
+   27|       |import Foundation
+   28|       |@_exported import SKCore
+   29|       |
+   30|       |open class Client {
+   31|       |    internal(set) public var authenticatedUser: User?
+   32|       |    internal(set) public var team: Team?
+   33|       |    internal(set) public var channels = [String: Channel]()
+   34|       |    internal(set) public var users = [String: User]()
+   35|       |    internal(set) public var userGroups = [String: UserGroup]()
+   36|       |    internal(set) public var bots = [String: Bot]()
+   37|       |    internal(set) public var files = [String: File]()
+   38|       |    internal(set) public var sentMessages = [String: Message]()
+   39|       |
+   40|     10|    public init(){}
+   41|       |
+   42|      7|    open func notificationForEvent(_ event: Event, type: EventType) {
+   43|      7|        switch type {
+   44|      7|        case .hello:
+   45|      7|            // Connection event
+   46|      7|            break
+   47|      7|        case .ok:
+   48|      0|            messageSent(event)
+   49|      7|        case .message:
+   50|      0|            if event.subtype != nil {
+   51|      0|                messageDispatcher(event)
+   52|      0|            } else {
+   53|      0|                messageReceived(event)
+   54|      7|            }
+   55|      7|        case .userTyping:
+   56|      0|            userTyping(event)
+   57|      7|        case .channelMarked, .imMarked, .groupMarked:
+   58|      0|            channelMarked(event)
+   59|      7|        case .channelCreated, .imCreated:
+   60|      0|            channelCreated(event)
+   61|      7|        case .channelJoined, .groupJoined:
+   62|      0|            channelJoined(event)
+   63|      7|        case .channelLeft, .groupLeft:
+   64|      0|            channelLeft(event)
+   65|      7|        case .channelDeleted:
+   66|      0|            channelDeleted(event)
+   67|      7|        case .channelRenamed, .groupRename:
+   68|      0|            channelRenamed(event)
+   69|      7|        case .channelArchive, .groupArchive:
+   70|      0|            channelArchived(event, archived: true)
+   71|      7|        case .channelUnarchive, .groupUnarchive:
+   72|      0|            channelArchived(event, archived: false)
+   73|      7|        case .channelHistoryChanged, .imHistoryChanged, .groupHistoryChanged:
+   74|      0|            channelHistoryChanged(event)
+   75|      7|        case .dndUpdated:
+   76|      0|            doNotDisturbUpdated(event)
+   77|      7|        case .dndUpatedUser:
+   78|      0|            doNotDisturbUserUpdated(event)
+   79|      7|        case .imOpen, .groupOpen:
+   80|      0|            open(event, open: true)
+   81|      7|        case .imClose, .groupClose:
+   82|      0|            open(event, open: false)
+   83|      7|        case .fileCreated:
+   84|      0|            processFile(event)
+   85|      7|        case .fileShared:
+   86|      0|            processFile(event)
+   87|      7|        case .fileUnshared:
+   88|      0|            processFile(event)
+   89|      7|        case .filePublic:
+   90|      0|            processFile(event)
+   91|      7|        case .filePrivate:
+   92|      0|            filePrivate(event)
+   93|      7|        case .fileChanged:
+   94|      0|            processFile(event)
+   95|      7|        case .fileDeleted:
+   96|      0|            deleteFile(event)
+   97|      7|        case .fileCommentAdded:
+   98|      0|            fileCommentAdded(event)
+   99|      7|        case .fileCommentEdited:
+  100|      0|            fileCommentEdited(event)
+  101|      7|        case .fileCommentDeleted:
+  102|      0|            fileCommentDeleted(event)
+  103|      7|        case .pinAdded:
+  104|      0|            pinAdded(event)
+  105|      7|        case .pinRemoved:
+  106|      0|            pinRemoved(event)
+  107|      7|        case .pong:
+  108|      0|            // Pong event
+  109|      0|            break
+  110|      7|        case .presenceChange:
+  111|      0|            presenceChange(event)
+  112|      7|        case .manualPresenceChange:
+  113|      0|            manualPresenceChange(event)
+  114|      7|        case .prefChange:
+  115|      0|            changePreference(event)
+  116|      7|        case .userChange:
+  117|      0|            userChange(event)
+  118|      7|        case .teamJoin:
+  119|      0|            teamJoin(event)
+  120|      7|        case .starAdded:
+  121|      0|            itemStarred(event, star: true)
+  122|      7|        case .starRemoved:
+  123|      0|            itemStarred(event, star: false)
+  124|      7|        case .reactionAdded:
+  125|      0|            addedReaction(event)
+  126|      7|        case .reactionRemoved:
+  127|      0|            removedReaction(event)
+  128|      7|        case .emojiChanged:
+  129|      0|            emojiChanged(event)
+  130|      7|        case .commandsChanged:
+  131|      0|            // This functionality is only used by our web client.
+  132|      0|            // The other APIs required to support slash command metadata are currently unstable.
+  133|      0|            // Until they are released other clients should ignore this event.
+  134|      0|            break
+  135|      7|        case .teamPlanChange:
+  136|      0|            teamPlanChange(event)
+  137|      7|        case .teamPrefChange:
+  138|      0|            teamPreferenceChange(event)
+  139|      7|        case .teamRename:
+  140|      0|            teamNameChange(event)
+  141|      7|        case .teamDomainChange:
+  142|      0|            teamDomainChange(event)
+  143|      7|        case .emailDomainChange:
+  144|      0|            emailDomainChange(event)
+  145|      7|        case .teamProfileChange:
+  146|      0|            teamProfileChange(event)
+  147|      7|        case .teamProfileDelete:
+  148|      0|            teamProfileDeleted(event)
+  149|      7|        case .teamProfileReorder:
+  150|      0|            teamProfileReordered(event)
+  151|      7|        case .botAdded:
+  152|      0|            bot(event)
+  153|      7|        case .botChanged:
+  154|      0|            bot(event)
+  155|      7|        case .accountsChanged:
+  156|      0|            // The accounts_changed event is used by our web client to maintain a list of logged-in accounts.
+  157|      0|            // Other clients should ignore this event.
+  158|      0|            break
+  159|      7|        case .teamMigrationStarted:
+  160|      0|            // Team migration event
+  161|      0|            break
+  162|      7|        case .reconnectURL:
+  163|      0|            // The reconnect_url event is currently unsupported and experimental.
+  164|      0|            break
+  165|      7|        case .subteamCreated, .subteamUpdated:
+  166|      0|            subteam(event)
+  167|      7|        case .subteamSelfAdded:
+  168|      0|            subteamAddedSelf(event)
+  169|      7|        case .subteamSelfRemoved:
+  170|      0|            subteamRemovedSelf(event)
+  171|      7|        case .error:
+  172|      0|            // Error event
+  173|      0|            break
+  174|      7|        case .goodbye:
+  175|      0|            // Goodbye event
+  176|      0|            break
+  177|      7|        case .unknown:
+  178|      0|            // Unsupported event
+  179|      0|            break
+  180|      7|        }
+  181|      7|    }
+  182|       |
+  183|       |    // MARK: - Client setup
+  184|      9|    open func initialSetup(JSON: [String: Any]) {
+  185|      9|        team = Team(team: JSON["team"] as? [String: Any])
+  186|      9|        authenticatedUser = User(user: JSON["self"] as? [String: Any])
+  187|      9|        authenticatedUser?.doNotDisturbStatus = DoNotDisturbStatus(status: JSON["dnd"] as? [String: Any])
+  188|     61|        enumerateObjects(JSON["users"] as? Array) { (user) in self.addUser(user) }
+  189|     64|        enumerateObjects(JSON["channels"] as? Array) { (channel) in self.addChannel(channel) }
+  190|      9|        enumerateObjects(JSON["groups"] as? Array) { (group) in self.addChannel(group) }
+  191|      9|        enumerateObjects(JSON["mpims"] as? Array) { (mpim) in self.addChannel(mpim) }
+  192|     48|        enumerateObjects(JSON["ims"] as? Array) { (ims) in self.addChannel(ims) }
+  193|    120|        enumerateObjects(JSON["bots"] as? Array) { (bots) in self.addBot(bots) }
+  194|      9|        enumerateSubteams(JSON["subteams"] as? [String: Any])
+  195|      9|    }
+  196|       |
+  197|      0|    private func messageDispatcher(_ event: Event) {
+  198|      0|        guard let value = event.subtype, let subtype = MessageSubtype(rawValue:value) else {
+  199|      0|            return
+  200|      0|        }
+  201|      0|        switch subtype {
+  202|      0|        case .messageChanged:
+  203|      0|            messageChanged(event)
+  204|      0|        case .messageDeleted:
+  205|      0|            messageDeleted(event)
+  206|      0|        default:
+  207|      0|            messageReceived(event)
+  208|      0|        }
+  209|      0|    }
+  210|       |}
+  211|       |
+  212|       |// MARK: - Messages
+  213|       |extension Client {
+  214|       |    func messageSent(_ event: Event) {
+  215|       |        guard
+  216|       |            let reply = event.replyTo,
+  217|       |            let message = sentMessages[NSNumber(value: reply).stringValue],
+  218|       |            let channel = message.channel,
+  219|       |            let ts = message.ts
+  220|       |        else {
+  221|       |            return
+  222|       |        }
+  223|       |        message.ts = event.ts
+  224|       |        message.text = event.text
+  225|       |        channels[channel]?.messages[ts] = message
+  226|       |    }
+  227|       |
+  228|       |    func messageReceived(_ event: Event) {
+  229|       |        guard
+  230|       |            let channel = event.channel,
+  231|       |            let message = event.message,
+  232|       |            let id = channel.id,
+  233|       |            let ts = message.ts
+  234|       |        else {
+  235|       |            return
+  236|       |        }
+  237|       |        channels[id]?.messages[ts] = message
+  238|       |    }
+  239|       |
+  240|       |    func messageChanged(_ event: Event) {
+  241|       |        guard
+  242|       |            let id = event.channel?.id,
+  243|       |            let nested = event.nestedMessage,
+  244|       |            let ts = nested.ts
+  245|       |        else {
+  246|       |            return
+  247|       |        }
+  248|       |        channels[id]?.messages[ts] = nested
+  249|       |    }
+  250|       |
+  251|       |    func messageDeleted(_ event: Event) {
+  252|       |        guard
+  253|       |            let id = event.channel?.id,
+  254|       |            let key = event.message?.deletedTs
+  255|       |        else {
+  256|       |            return
+  257|       |        }
+  258|       |        _ = channels[id]?.messages.removeValue(forKey: key)
+  259|       |    }
+  260|       |}
+  261|       |
+  262|       |// MARK: - Channels
+  263|       |extension Client {
+  264|       |    func userTyping(_ event: Event) {
+  265|       |        guard
+  266|       |            let channel = event.channel,
+  267|       |            let channelID = channel.id,
+  268|       |            let user = event.user,
+  269|       |            let userID = user.id,
+  270|       |            channels.index(forKey: channelID) != nil,
+  271|       |            !channels[channelID]!.usersTyping.contains(userID)
+  272|       |        else {
+  273|       |            return
+  274|       |        }
+  275|       |        channels[channelID]?.usersTyping.append(userID)
+  276|       |
+  277|       |        let timeout = DispatchTime.now() + Double(Int64(5.0 * Double(UInt64.nanosecondsPerSecond))) / Double(UInt64.nanosecondsPerSecond)
+  278|      0|        DispatchQueue.main.asyncAfter(deadline: timeout, execute: {
+  279|      0|            if let index = self.channels[channelID]?.usersTyping.index(of: userID) {
+  280|      0|                self.channels[channelID]?.usersTyping.remove(at: index)
+  281|      0|            }
+  282|      0|        })
+  283|       |    }
+  284|       |
+  285|       |    func channelMarked(_ event: Event) {
+  286|       |        guard
+  287|       |            let channel = event.channel,
+  288|       |            let id = channel.id
+  289|       |        else {
+  290|       |            return
+  291|       |        }
+  292|       |        channels[id]?.lastRead = event.ts
+  293|       |    }
+  294|       |
+  295|       |    func channelCreated(_ event: Event) {
+  296|       |        guard
+  297|       |            let channel = event.channel,
+  298|       |            let id = channel.id
+  299|       |        else {
+  300|       |            return
+  301|       |        }
+  302|       |        channels[id] = channel
+  303|       |    }
+  304|       |
+  305|       |    func channelDeleted(_ event: Event) {
+  306|       |        guard
+  307|       |            let channel = event.channel,
+  308|       |            let id = channel.id
+  309|       |        else {
+  310|       |            return
+  311|       |        }
+  312|       |        channels.removeValue(forKey: id)
+  313|       |    }
+  314|       |
+  315|       |    func channelJoined(_ event: Event) {
+  316|       |        guard
+  317|       |            let channel = event.channel,
+  318|       |            let id = channel.id
+  319|       |        else {
+  320|       |            return
+  321|       |        }
+  322|       |        channels[id] = event.channel
+  323|       |    }
+  324|       |
+  325|       |    func channelLeft(_ event: Event) {
+  326|       |        guard
+  327|       |            let channel = event.channel,
+  328|       |            let id = channel.id
+  329|       |        else {
+  330|       |            return
+  331|       |        }
+  332|       |
+  333|       |        if let userID = authenticatedUser?.id, let index = channels[id]?.members?.index(of: userID) {
+  334|       |            channels[id]?.members?.remove(at: index)
+  335|       |        }
+  336|       |    }
+  337|       |
+  338|       |    func channelRenamed(_ event: Event) {
+  339|       |        guard
+  340|       |            let channel = event.channel,
+  341|       |            let id = channel.id
+  342|       |        else {
+  343|       |            return
+  344|       |        }
+  345|       |        channels[id]?.name = channel.name
+  346|       |    }
+  347|       |
+  348|       |    func channelArchived(_ event: Event, archived: Bool) {
+  349|       |        guard
+  350|       |            let channel = event.channel,
+  351|       |            let id = channel.id
+  352|       |        else {
+  353|       |            return
+  354|       |        }
+  355|       |        channels[id]?.isArchived = archived
+  356|       |    }
+  357|       |
+  358|       |    func channelHistoryChanged(_ event: Event) {
+  359|       |
+  360|       |    }
+  361|       |}
+  362|       |
+  363|       |// MARK: - Do Not Disturb
+  364|       |extension Client {
+  365|       |    func doNotDisturbUpdated(_ event: Event) {
+  366|       |        guard let dndStatus = event.dndStatus else {
+  367|       |            return
+  368|       |        }
+  369|       |        authenticatedUser?.doNotDisturbStatus = dndStatus
+  370|       |    }
+  371|       |
+  372|       |    func doNotDisturbUserUpdated(_ event: Event) {
+  373|       |        guard
+  374|       |            let dndStatus = event.dndStatus,
+  375|       |            let user = event.user,
+  376|       |            let id = user.id
+  377|       |        else {
+  378|       |            return
+  379|       |        }
+  380|       |        users[id]?.doNotDisturbStatus = dndStatus
+  381|       |    }
+  382|       |}
+  383|       |
+  384|       |// MARK: - IM & Group Open/Close
+  385|       |extension Client {
+  386|       |    func open(_ event: Event, open: Bool) {
+  387|       |        guard
+  388|       |            let channel = event.channel,
+  389|       |            let id = channel.id
+  390|       |        else {
+  391|       |            return
+  392|       |        }
+  393|       |        channels[id]?.isOpen = open
+  394|       |    }
+  395|       |}
+  396|       |
+  397|       |// MARK: - Files
+  398|       |extension Client {
+  399|       |    func processFile(_ event: Event) {
+  400|       |        guard
+  401|       |            let file = event.file,
+  402|       |            let id = file.id
+  403|       |        else {
+  404|       |            return
+  405|       |        }
+  406|       |        if let comment = file.initialComment, let commentID = comment.id {
+  407|       |            if files[id]?.comments[commentID] == nil {
+  408|       |                files[id]?.comments[commentID] = comment
+  409|       |            }
+  410|       |        }
+  411|       |        files[id] = file
+  412|       |    }
+  413|       |
+  414|       |    func filePrivate(_ event: Event) {
+  415|       |        guard
+  416|       |            let file =  event.file,
+  417|       |            let id = file.id
+  418|       |        else {
+  419|       |            return
+  420|       |        }
+  421|       |        files[id]?.isPublic = false
+  422|       |    }
+  423|       |
+  424|       |    func deleteFile(_ event: Event) {
+  425|       |        guard
+  426|       |            let file = event.file,
+  427|       |            let id = file.id
+  428|       |        else {
+  429|       |            return
+  430|       |        }
+  431|       |        if files[id] != nil {
+  432|       |            files.removeValue(forKey: id)
+  433|       |        }
+  434|       |    }
+  435|       |
+  436|       |    func fileCommentAdded(_ event: Event) {
+  437|       |        guard
+  438|       |            let file = event.file,
+  439|       |            let id = file.id,
+  440|       |            let comment = event.comment,
+  441|       |            let commentID = comment.id
+  442|       |        else {
+  443|       |            return
+  444|       |        }
+  445|       |        files[id]?.comments[commentID] = comment
+  446|       |    }
+  447|       |
+  448|       |    func fileCommentEdited(_ event: Event) {
+  449|       |        guard
+  450|       |            let file = event.file,
+  451|       |            let id = file.id,
+  452|       |            let comment = event.comment,
+  453|       |            let commentID = comment.id
+  454|       |        else {
+  455|       |            return
+  456|       |        }
+  457|       |        files[id]?.comments[commentID]?.comment = comment.comment
+  458|       |    }
+  459|       |
+  460|       |    func fileCommentDeleted(_ event: Event) {
+  461|       |        guard
+  462|       |            let file = event.file,
+  463|       |            let id = file.id,
+  464|       |            let comment = event.comment,
+  465|       |            let commentID = comment.id
+  466|       |        else {
+  467|       |            return
+  468|       |        }
+  469|       |        _ = files[id]?.comments.removeValue(forKey: commentID)
+  470|       |    }
+  471|       |}
+  472|       |
+  473|       |// MARK: - Pins
+  474|       |extension Client {
+  475|       |    func pinAdded(_ event: Event) {
+  476|       |        guard
+  477|       |            let id = event.channelID,
+  478|       |            let item = event.item
+  479|       |        else {
+  480|       |            return
+  481|       |        }
+  482|       |        channels[id]?.pinnedItems.append(item)
+  483|       |    }
+  484|       |
+  485|       |    func pinRemoved(_ event: Event) {
+  486|       |        guard
+  487|       |            let id = event.channelID,
+  488|       |            let item = event.item
+  489|       |        else {
+  490|       |            return
+  491|       |        }
+  492|      0|        if let pins = channels[id]?.pinnedItems.filter({$0 != item}) {
+  493|       |            channels[id]?.pinnedItems = pins
+  494|       |        }
+  495|       |    }
+  496|       |}
+  497|       |
+  498|       |// MARK: - Stars
+  499|       |extension Client {
+  500|       |    func itemStarred(_ event: Event, star: Bool) {
+  501|       |        guard
+  502|       |            let item = event.item,
+  503|       |            let type = item.type
+  504|       |        else {
+  505|       |            return
+  506|       |        }
+  507|       |        switch type {
+  508|       |        case "message":
+  509|       |            starMessage(item, star: star)
+  510|       |        case "file":
+  511|       |            starFile(item, star: star)
+  512|       |        case "file_comment":
+  513|       |            starComment(item)
+  514|       |        default:
+  515|       |            break
+  516|       |        }
+  517|       |    }
+  518|       |
+  519|       |    func starMessage(_ item: Item, star: Bool) {
+  520|       |        guard
+  521|       |            let message = item.message,
+  522|       |            let ts = message.ts,
+  523|       |            let channel = item.channel,
+  524|       |            channels[channel]?.messages[ts] != nil
+  525|       |        else {
+  526|       |            return
+  527|       |        }
+  528|       |        channels[channel]?.messages[ts]?.isStarred = star
+  529|       |    }
+  530|       |
+  531|       |    func starFile(_ item: Item, star: Bool) {
+  532|       |        guard
+  533|       |            let file = item.file,
+  534|       |            let id = file.id
+  535|       |        else {
+  536|       |            return
+  537|       |        }
+  538|       |        files[id]?.isStarred = star
+  539|       |        if let stars = files[id]?.stars {
+  540|       |            if star == true {
+  541|       |                files[id]?.stars = stars + 1
+  542|       |            } else {
+  543|       |                if stars > 0 {
+  544|       |                    files[id]?.stars = stars - 1
+  545|       |                }
+  546|       |            }
+  547|       |        }
+  548|       |    }
+  549|       |
+  550|       |    func starComment(_ item: Item) {
+  551|       |        guard
+  552|       |            let file = item.file,
+  553|       |            let id = file.id,
+  554|       |            let comment = item.comment,
+  555|       |            let commentID = comment.id
+  556|       |        else {
+  557|       |            return
+  558|       |        }
+  559|       |        files[id]?.comments[commentID] = comment
+  560|       |    }
+  561|       |}
+  562|       |
+  563|       |// MARK: - Reactions
+  564|       |extension Client {
+  565|       |    func addedReaction(_ event: Event) {
+  566|       |        guard
+  567|       |            let item = event.item,
+  568|       |            let type = item.type,
+  569|       |            let reaction = event.reaction,
+  570|       |            let userID = event.user?.id
+  571|       |        else {
+  572|       |            return
+  573|       |        }
+  574|       |        switch type {
+  575|       |        case "message":
+  576|       |            guard
+  577|       |                let channel = item.channel,
+  578|       |                let ts = item.ts,
+  579|       |                let message = channels[channel]?.messages[ts]
+  580|       |            else {
+  581|       |                return
+  582|       |            }
+  583|       |            message.reactions.append(Reaction(name: reaction, user: userID))
+  584|       |        case "file":
+  585|       |            guard let id = item.file?.id else {
+  586|       |                return
+  587|       |            }
+  588|       |            files[id]?.reactions.append(Reaction(name: reaction, user: userID))
+  589|       |        case "file_comment":
+  590|       |            guard
+  591|       |                let id = item.file?.id,
+  592|       |                let commentID = item.fileCommentID
+  593|       |            else {
+  594|       |                return
+  595|       |            }
+  596|       |            files[id]?.comments[commentID]?.reactions.append(Reaction(name: reaction, user: userID))
+  597|       |        default:
+  598|       |            break
+  599|       |        }
+  600|       |    }
+  601|       |
+  602|       |    func removedReaction(_ event: Event) {
+  603|       |        guard
+  604|       |            let item = event.item,
+  605|       |            let type = item.type,
+  606|       |            let key = event.reaction,
+  607|       |            let userID = event.user?.id
+  608|       |        else {
+  609|       |            return
+  610|       |        }
+  611|       |        switch type {
+  612|       |        case "message":
+  613|       |            guard
+  614|       |                let channel = item.channel,
+  615|       |                let ts = item.ts,
+  616|       |                let message = channels[channel]?.messages[ts]
+  617|       |            else {
+  618|       |                return
+  619|       |            }
+  620|      0|            message.reactions = message.reactions.filter({$0.name != key && $0.user != userID})
+  621|       |        case "file":
+  622|       |            guard
+  623|       |                let itemFile = item.file,
+  624|       |                let id = itemFile.id
+  625|       |            else {
+  626|       |                return
+  627|       |            }
+  628|      0|            files[id]?.reactions = files[id]!.reactions.filter({$0.name != key && $0.user != userID})
+  629|       |        case "file_comment":
+  630|       |            guard
+  631|       |                let id = item.file?.id,
+  632|       |                let commentID = item.fileCommentID
+  633|       |            else {
+  634|       |                return
+  635|       |            }
+  636|      0|            files[id]?.comments[commentID]?.reactions = files[id]!.comments[commentID]!.reactions.filter({$0.name != key && $0.user != userID})
+  637|       |        default:
+  638|       |            break
+  639|       |        }
+  640|       |    }
+  641|       |}
+  642|       |
+  643|       |// MARK: - Preferences
+  644|       |extension Client {
+  645|       |    func changePreference(_ event: Event) {
+  646|       |        guard let name = event.name else {
+  647|       |            return
+  648|       |        }
+  649|       |        authenticatedUser?.preferences?[name] = event.value
+  650|       |    }
+  651|       |}
+  652|       |
+  653|       |// MARK: - User Change
+  654|       |extension Client {
+  655|       |    func userChange(_ event: Event) {
+  656|       |        guard
+  657|       |            let user = event.user,
+  658|       |            let id = user.id
+  659|       |        else {
+  660|       |            return
+  661|       |        }
+  662|       |        let preferences = users[id]?.preferences
+  663|       |        users[id] = user
+  664|       |        users[id]?.preferences = preferences
+  665|       |    }
+  666|       |}
+  667|       |
+  668|       |// MARK: - User Presence
+  669|       |extension Client {
+  670|       |    func presenceChange(_ event: Event) {
+  671|       |        guard
+  672|       |            let user = event.user,
+  673|       |            let id = user.id
+  674|       |        else {
+  675|       |            return
+  676|       |        }
+  677|       |        users[id]?.presence = event.presence
+  678|       |    }
+  679|       |}
+  680|       |
+  681|       |// MARK: - Team
+  682|       |extension Client {
+  683|       |    func teamJoin(_ event: Event) {
+  684|       |        guard
+  685|       |            let user = event.user,
+  686|       |            let id = user.id
+  687|       |        else {
+  688|       |            return
+  689|       |        }
+  690|       |        users[id] = user
+  691|       |    }
+  692|       |
+  693|       |    func teamPlanChange(_ event: Event) {
+  694|       |        guard let plan = event.plan else {
+  695|       |            return
+  696|       |        }
+  697|       |        team?.plan = plan
+  698|       |    }
+  699|       |
+  700|       |    func teamPreferenceChange(_ event: Event) {
+  701|       |        guard let name = event.name else {
+  702|       |            return
+  703|       |        }
+  704|       |        team?.prefs?[name] = event.value
+  705|       |    }
+  706|       |
+  707|       |    func teamNameChange(_ event: Event) {
+  708|       |        guard let name = event.name else {
+  709|       |            return
+  710|       |        }
+  711|       |        team?.name = name
+  712|       |    }
+  713|       |
+  714|       |    func teamDomainChange(_ event: Event) {
+  715|       |        guard let domain = event.domain else {
+  716|       |            return
+  717|       |        }
+  718|       |        team?.domain = domain
+  719|       |    }
+  720|       |
+  721|       |    func emailDomainChange(_ event: Event) {
+  722|       |        guard let domain = event.emailDomain else {
+  723|       |            return
+  724|       |        }
+  725|       |        team?.emailDomain = domain
+  726|       |    }
+  727|       |
+  728|       |    func emojiChanged(_ event: Event) {}
+  729|       |}
+  730|       |
+  731|       |// MARK: - Bots
+  732|       |extension Client {
+  733|       |    func bot(_ event: Event) {
+  734|       |        guard
+  735|       |            let bot = event.bot,
+  736|       |            let id = bot.id
+  737|       |        else {
+  738|       |            return
+  739|       |        }
+  740|       |        bots[id] = bot
+  741|       |    }
+  742|       |}
+  743|       |
+  744|       |// MARK: - Subteams
+  745|       |extension Client {
+  746|       |    func subteam(_ event: Event) {
+  747|       |        guard
+  748|       |            let subteam = event.subteam,
+  749|       |            let id = subteam.id
+  750|       |        else {
+  751|       |            return
+  752|       |        }
+  753|       |        userGroups[id] = subteam
+  754|       |    }
+  755|       |
+  756|       |    func subteamAddedSelf(_ event: Event) {
+  757|       |        guard
+  758|       |            let subteamID = event.subteamID,
+  759|       |            authenticatedUser?.userGroups != nil
+  760|       |        else {
+  761|       |            return
+  762|       |        }
+  763|       |        authenticatedUser?.userGroups![subteamID] = subteamID
+  764|       |    }
+  765|       |
+  766|       |    func subteamRemovedSelf(_ event: Event) {
+  767|       |        guard let subteamID = event.subteamID else {
+  768|       |            return
+  769|       |        }
+  770|       |        _ = authenticatedUser?.userGroups?.removeValue(forKey: subteamID)
+  771|       |    }
+  772|       |}
+  773|       |
+  774|       |// MARK: - Team Profiles
+  775|       |extension Client {
+  776|       |    func teamProfileChange(_ event: Event) {
+  777|       |        guard let profile = event.profile else {
+  778|       |            return
+  779|       |        }
+  780|       |        for user in users {
+  781|       |            for key in profile.fields.keys {
+  782|       |                users[user.0]?.profile?.customProfile?.fields[key]?.updateProfileField(profile.fields[key])
+  783|       |            }
+  784|       |        }
+  785|       |    }
+  786|       |
+  787|       |    func teamProfileDeleted(_ event: Event) {
+  788|       |        guard let profile = event.profile else {
+  789|       |            return
+  790|       |        }
+  791|       |        for user in users {
+  792|       |            if let id = profile.fields.first?.0 {
+  793|       |                users[user.0]?.profile?.customProfile?.fields[id] = nil
+  794|       |            }
+  795|       |        }
+  796|       |    }
+  797|       |
+  798|       |    func teamProfileReordered(_ event: Event) {
+  799|       |        guard let profile = event.profile else {
+  800|       |            return
+  801|       |        }
+  802|       |        for user in users {
+  803|       |            for key in profile.fields.keys {
+  804|       |                users[user.0]?.profile?.customProfile?.fields[key]?.ordering = profile.fields[key]?.ordering
+  805|       |            }
+  806|       |        }
+  807|       |    }
+  808|       |}
+  809|       |
+  810|       |// MARK: - Authenticated User
+  811|       |extension Client {
+  812|       |    func manualPresenceChange(_ event: Event) {
+  813|       |        guard let presence = event.presence else {
+  814|       |            return
+  815|       |        }
+  816|       |        authenticatedUser?.presence = presence
+  817|       |    }
+  818|       |}
+  819|       |
+  820|       |// MARK: - Utilities
+  821|       |public extension Client {
+  822|       |    fileprivate func addUser(_ aUser: [String: Any]) {
+  823|       |        let user = User(user: aUser)
+  824|       |        if let id = user.id {
+  825|       |            users[id] = user
+  826|       |        }
+  827|       |    }
+  828|       |
+  829|       |    fileprivate func addChannel(_ aChannel: [String: Any]) {
+  830|       |        let channel = Channel(channel: aChannel)
+  831|       |        if let id = channel.id {
+  832|       |            channels[id] = channel
+  833|       |        }
+  834|       |    }
+  835|       |
+  836|       |    fileprivate func addBot(_ aBot: [String: Any]) {
+  837|       |        let bot = Bot(bot: aBot)
+  838|       |        if let id = bot.id {
+  839|       |            bots[id] = bot
+  840|       |        }
+  841|       |    }
+  842|       |
+  843|       |    fileprivate func enumerateSubteams(_ subteams: [String: Any]?) {
+  844|       |        if let subteams = subteams {
+  845|       |            if let all = subteams["all"] as? [[String: Any]] {
+  846|       |                for item in all {
+  847|       |                    let u = UserGroup(userGroup: item)
+  848|       |                    if let id = u.id {
+  849|       |                        self.userGroups[id] = u
+  850|       |                    }
+  851|       |                }
+  852|       |            }
+  853|       |            if let auth = subteams["self"] as? [String] {
+  854|       |                for item in auth {
+  855|       |                    authenticatedUser?.userGroups = [String: String]()
+  856|       |                    authenticatedUser?.userGroups?[item] = item
+  857|       |                }
+  858|       |            }
+  859|       |        }
+  860|       |    }
+  861|       |
+  862|       |    fileprivate func enumerateObjects(_ array: [Any]?, initalizer: ([String: Any]) -> Void) {
+  863|       |        if let array = array {
+  864|       |            for object in array {
+  865|       |                if let dictionary = object as? [String: Any] {
+  866|       |                    initalizer(dictionary)
+  867|       |                }
+  868|       |            }
+  869|       |        }
+  870|       |    }
+  871|       |}
+

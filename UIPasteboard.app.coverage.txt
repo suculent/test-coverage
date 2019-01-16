@@ -69,255 +69,243 @@
    18|       |    
    19|      5|    var something = false;
    20|      5|    
-   21|      5|    let verdicts: [String:Bool] = [
-   22|      5|        "Mr. Roboto" : false,
-   23|       |        "Service Kiosks": false,
-   24|      0|        "Darth Vader": false,
-   25|      0|        "K-9": true,
-   26|      0|        "Emotions": false,
-   27|      0|        "Self-Driving Cars": false,
-   28|      0|        "Telepresence Robots": false,
-   29|      0|        "Roomba": true,
-   30|      0|        "Assembly-Line Robot": false,
-   31|      0|        "ASIMO": false,
-   32|      0|        "KITT": false,
-   33|      0|        "USS Enterprise": false,
-   34|      0|        "Transformers": true,
-   35|      0|        "Jaegers": false,
-   36|      0|        "The Major": false,
-   37|      0|        "Siri": false,
-   38|      0|        "The Terminator": true,
-   39|      0|        "Commander Data": false,
-   40|      0|        "Marvin the Paranoid Android": true,
-   41|      0|        "Pinocchio": false,
-   42|      0|        "Droids": true,
-   43|      0|        "Hitchbot": false,
-   44|      0|        "Mars Rovers": false,
-   45|      0|        "Space Probes": false,
-   46|      0|        "Sasquatch": false,
-   47|      0|        "Toaster": false,
-   48|      0|        "Toaster Oven": false,
-   49|      0|        "Cylons": false,
-   50|      0|        "V'ger": true,
-   51|      0|        "Ilia Robot": false,
-   52|      0|        "The TARDIS": false,
-   53|      0|        "Johnny 5": true,
-   54|      0|        "Twiki": true,
-   55|      0|        "Dr. Theopolis": false,
-   56|      0|        "robots.txt": false,
-   57|       |        "Lobot": false,
-   58|      5|        "Vicki": true,
-   59|      5|        "GlaDOS": false,
-   60|      5|        "Turrets": true,
-   61|      5|        "Wheatley": true,
-   62|      5|        "Herbie the Love Bug": false,
-   63|      5|        "Iron Man": false,
-   64|      5|        "Ultron": false,
-   65|      5|        "The Vision": false,
-   66|      5|        "Clockwork Droids": false,
-   67|      5|        "Podcasts": false,
-   68|      5|        "Cars": false,
-   69|      5|        "Swimming Pool Cleaners": false,
-   70|      5|        "Burritos": false,
-   71|      0|        "Prince Robot IV": false,
-   72|      5|        "Daleks": false,
-   73|      5|        "Cybermen": false,
-   74|      5|        "The Internet of Things": false,
-   75|      0|        "Nanobots": true,
-   76|      5|        "Two Intermeshed Gears": false,
-   77|      5|        "Crow T. Robot": true,
-   78|      5|        "Tom Servo": true,
-   79|      0|        "Thomas and Friends": false,
-   80|      5|        "Replicants": false,
-   81|      5|        "Chatbots": false,
-   82|      5|        "Agents": false,
-   83|      5|        "Lego Simulated Worm Toy": true,
-   84|      5|        "Ghosts": false,
-   85|      5|        "Exos": true,
-   86|       |        "Rasputin": false,
-   87|       |        "Tamagotchi": false,
-   88|       |        "T-1000": true,
-   89|       |        "The Tin Woodman": false,
-   90|       |        "Mic N. The Robot": true,
-   91|       |        "Robot Or Not Bot": false
-   92|       |    ]
-   93|       |    
-   94|       |    var bot = SlackKit()
+   21|      5|    var last = ""
+   22|      5|    
+   23|       |    let verdicts: [String:Bool] = [
+   24|      0|        "Mr. Roboto" : false,
+   25|      0|        "Service Kiosks": false,
+   26|      0|        "Darth Vader": false,
+   27|      0|        "K-9": true,
+   28|      0|        "Emotions": false,
+   29|      0|        "Self-Driving Cars": false,
+   30|      0|        "Telepresence Robots": false,
+   31|      0|        "Roomba": true,
+   32|      0|        "Assembly-Line Robot": false,
+   33|      0|        "ASIMO": false,
+   34|      0|        "KITT": false,
+   35|      0|        "USS Enterprise": false,
+   36|      0|        "Transformers": true,
+   37|      0|        "Jaegers": false,
+   38|      0|        "The Major": false,
+   39|      0|        "Siri": false,
+   40|      0|        "The Terminator": true,
+   41|      0|        "Commander Data": false,
+   42|      0|        "Marvin the Paranoid Android": true,
+   43|      0|        "Pinocchio": false,
+   44|      0|        "Droids": true,
+   45|      0|        "Hitchbot": false,
+   46|      0|        "Mars Rovers": false,
+   47|      0|        "Space Probes": false,
+   48|      0|        "Sasquatch": false,
+   49|      0|        "Toaster": false,
+   50|      0|        "Toaster Oven": false,
+   51|      0|        "Cylons": false,
+   52|      0|        "V'ger": true,
+   53|      0|        "Ilia Robot": false,
+   54|      0|        "The TARDIS": false,
+   55|      0|        "Johnny 5": true,
+   56|      0|        "Twiki": true,
+   57|       |        "Dr. Theopolis": false,
+   58|      5|        "robots.txt": false,
+   59|      5|        "Lobot": false,
+   60|      5|        "Vicki": true,
+   61|      5|        "GlaDOS": false,
+   62|      5|        "Turrets": true,
+   63|      5|        "Wheatley": true,
+   64|      5|        "Herbie the Love Bug": false,
+   65|      5|        "Iron Man": false,
+   66|      5|        "Ultron": false,
+   67|      5|        "The Vision": false,
+   68|      5|        "Clockwork Droids": false,
+   69|      5|        "Podcasts": false,
+   70|      5|        "Cars": false,
+   71|      0|        "Swimming Pool Cleaners": false,
+   72|      5|        "Burritos": false,
+   73|      5|        "Prince Robot IV": false,
+   74|      5|        "Daleks": false,
+   75|      0|        "Cybermen": false,
+   76|      5|        "The Internet of Things": false,
+   77|      5|        "Nanobots": true,
+   78|      5|        "Two Intermeshed Gears": false,
+   79|      0|        "Crow T. Robot": true,
+   80|      5|        "Tom Servo": true,
+   81|      5|        "Thomas and Friends": false,
+   82|      5|        "Replicants": false,
+   83|      5|        "Chatbots": false,
+   84|      5|        "Agents": false,
+   85|      5|        "Lego Simulated Worm Toy": true,
+   86|       |        "Ghosts": false,
+   87|       |        "Exos": true,
+   88|       |        "Rasputin": false,
+   89|       |        "Tamagotchi": false,
+   90|       |        "T-1000": true,
+   91|       |        "The Tin Woodman": false,
+   92|       |        "Mic N. The Robot": true,
+   93|       |        "Robot Or Not Bot": false
+   94|       |    ]
    95|       |    
-   96|       |    /*
-   97|       |    init(token: String) {
-   98|       |        bot = SlackKit()
-   99|       |        bot.addRTMBotWithAPIToken(token)
-  100|       |        bot.addWebAPIAccessWithToken(token)
-  101|       |        bot.notificationForEvent(.message) { [weak self] (event, client) in
-  102|       |            guard
-  103|       |                let message = event.message,
-  104|       |                let id = client?.client?.authenticatedUser?.id,
-  105|       |                message.text?.contains(id) == true
-  106|       |                else {
-  107|       |                    return
-  108|       |            }
-  109|       |            self?.handleMessage(message)
-  110|       |        }
-  111|       |    }*/
-  112|       |
-  113|       |    override func viewDidLoad() {
-  114|       |        super.viewDidLoad()
-  115|       |        initSlack()
-  116|       |        
-  117|       |        let notificationName = Notification.Name("applicationDidBecomeActive")
-  118|       |        NotificationCenter.default.addObserver(forName: notificationName, object: nil, queue: OperationQueue.main) { (Notification) in
-  119|       |            print("Sending pasteboard on applicationDidBecomeActive notification...")
-  120|       |            self.sendPasteboard()
-  121|       |        }
-  122|       |        
-  123|       |        NotificationCenter.default.addObserver(forName: UIPasteboard.changedNotification, object: nil, queue: OperationQueue.main) { (Notification) in
-  124|       |            print("Sending pasteboard on change notification...")
-  125|       |            self.sendPasteboard()
-  126|       |        }
-  127|       |    }
-  128|       |    
-  129|       |    deinit {
-  130|       |        let notificationName = Notification.Name("applicationDidBecomeActive")
-  131|       |        NotificationCenter.default.removeObserver(self, name: notificationName, object: nil)
-  132|       |    }
-  133|       |    
-  134|       |    func initSlack() {
-  135|       |        
-  136|       |        bot = SlackKit()
-  137|       |        bot.addRTMBotWithAPIToken(ACCESS_TOKEN)
-  138|       |        bot.addWebAPIAccessWithToken(ACCESS_TOKEN)
-  139|       |        
-  140|       |        //let oauthConfig = OAuthConfig(clientID: CLIENT_ID, clientSecret: CLIENT_SECRET)
-  141|       |        //bot.addServer(oauth: oauthConfig)
-  142|       |        
-  143|       |        bot.notificationForEvent(.message) { [weak self] (event, client) in
-  144|       |            guard
-  145|       |                let message = event.message,
-  146|       |                let id = client?.client?.authenticatedUser?.id,
-  147|       |                message.text?.contains(id) == true
-  148|       |                else {
-  149|       |                    return
+   96|       |    var bot = SlackKit()
+   97|       |
+   98|       |    override func viewDidLoad() {
+   99|       |        super.viewDidLoad()
+  100|       |        initSlack()
+  101|       |        
+  102|       |        let notificationName = Notification.Name("applicationDidBecomeActive")
+  103|       |        NotificationCenter.default.addObserver(forName: notificationName, object: nil, queue: OperationQueue.main) { (Notification) in
+  104|       |            print("Sending pasteboard on applicationDidBecomeActive notification...")
+  105|       |            self.sendPasteboard()
+  106|       |        }
+  107|       |        
+  108|       |        NotificationCenter.default.addObserver(forName: UIPasteboard.changedNotification, object: nil, queue: OperationQueue.main) { (Notification) in
+  109|       |            print("Sending pasteboard on change notification...")
+  110|       |            self.sendPasteboard()
+  111|       |        }
+  112|       |    }
+  113|       |    
+  114|       |    deinit {
+  115|       |        let notificationName = Notification.Name("applicationDidBecomeActive")
+  116|       |        NotificationCenter.default.removeObserver(self, name: notificationName, object: nil)
+  117|       |    }
+  118|       |    
+  119|       |    func initSlack() {
+  120|       |        
+  121|       |        bot = SlackKit()
+  122|       |        bot.addRTMBotWithAPIToken(ACCESS_TOKEN)
+  123|       |        bot.addWebAPIAccessWithToken(ACCESS_TOKEN)
+  124|       |        
+  125|       |        //let oauthConfig = OAuthConfig(clientID: CLIENT_ID, clientSecret: CLIENT_SECRET)
+  126|       |        //bot.addServer(oauth: oauthConfig)
+  127|       |        
+  128|       |        bot.notificationForEvent(.message) { [weak self] (event, client) in
+  129|       |            guard
+  130|       |                let message = event.message,
+  131|       |                let id = client?.client?.authenticatedUser?.id,
+  132|       |                message.text?.contains(id) == true
+  133|       |                else {
+  134|       |                    return
+  135|       |            }
+  136|       |            self?.handleMessage(message)
+  137|       |        }
+  138|       |    }
+  139|       |    
+  140|       |    // MARK: Bot logic
+  141|       |    private func handleMessage(_ message: Message) {
+  142|       |        if let text = message.text?.lowercased(), let timestamp = message.ts, let channel = message.channel {
+  143|       |            for (robot, verdict) in verdicts {
+  144|       |                let lowerbot = robot.lowercased()
+  145|       |                if text.contains(lowerbot) {
+  146|       |                    let reaction = verdict ? "robot_face" : "no_entry_sign"
+  147|       |                    bot.webAPI?.addReactionToMessage(name: reaction, channel: channel, timestamp: timestamp, success: nil, failure: nil)
+  148|       |                    return
+  149|       |                }
   150|       |            }
-  151|       |            self?.handleMessage(message)
-  152|       |        }
-  153|       |    }
-  154|       |    
-  155|       |    // MARK: Bot logic
-  156|       |    private func handleMessage(_ message: Message) {
-  157|       |        if let text = message.text?.lowercased(), let timestamp = message.ts, let channel = message.channel {
-  158|       |            for (robot, verdict) in verdicts {
-  159|       |                let lowerbot = robot.lowercased()
-  160|       |                if text.contains(lowerbot) {
-  161|       |                    let reaction = verdict ? "robot_face" : "no_entry_sign"
-  162|       |                    bot.webAPI?.addReactionToMessage(name: reaction, channel: channel, timestamp: timestamp, success: nil, failure: nil)
-  163|       |                    return
-  164|       |                }
-  165|       |            }
-  166|       |            // Not found
-  167|       |            bot.webAPI?.addReactionToMessage(name: "question", channel: channel, timestamp: timestamp, success: nil, failure: nil)
-  168|       |            return
-  169|       |        }
-  170|       |    }
-  171|       |    
-  172|       |    override func viewDidAppear(_ animated: Bool) {
-  173|       |        super.viewDidAppear(animated)
-  174|       |        sendPasteboard()
-  175|       |        print("Sending pasteboard on viewDidAppear...")
-  176|       |    }
-  177|       |
-  178|       |    func untestableExample(_ animated: Bool) {
-  179|       |        
-  180|       |        super.viewDidAppear(animated)
+  151|       |            // Not found
+  152|       |            bot.webAPI?.addReactionToMessage(name: "question", channel: channel, timestamp: timestamp, success: nil, failure: nil)
+  153|       |            return
+  154|       |        }
+  155|       |    }
+  156|       |    
+  157|       |    override func viewDidAppear(_ animated: Bool) {
+  158|       |        super.viewDidAppear(animated)
+  159|       |        sendPasteboard()
+  160|       |        print("Sending pasteboard on viewDidAppear...")
+  161|       |    }
+  162|       |
+  163|       |    func untestableExample(_ animated: Bool) {
+  164|       |        
+  165|       |        super.viewDidAppear(animated)
+  166|       |        
+  167|       |        // Causes example of code uncovered by tests (something will be always false)
+  168|       |        if (something) { return }
+  169|       |        
+  170|       |        // This branch of code will never be tested.
+  171|       |        
+  172|       |        let pasteboard = UIPasteboard.general
+  173|       |        pasteboard.string = "#@©|<3∆"
+  174|       |        pasteboard.url = URL(string: "https://rtm.thinx.cloud")
+  175|       |        pasteboard.image = UIImage()
+  176|       |        pasteboard.color = UIColor.red
+  177|       |        
+  178|       |        if pasteboard.hasStrings {
+  179|       |            print("The pasteboard has Strings!")
+  180|       |        }
   181|       |        
-  182|       |        // Causes example of code uncovered by tests (something will be always false)
-  183|       |        if (something) { return }
-  184|       |        
-  185|       |        // This branch of code will never be tested.
-  186|       |        
-  187|       |        let pasteboard = UIPasteboard.general
-  188|       |        pasteboard.string = "#@©|<3∆"
-  189|       |        pasteboard.url = URL(string: "https://rtm.thinx.cloud")
-  190|       |        pasteboard.image = UIImage()
-  191|       |        pasteboard.color = UIColor.red
-  192|       |        
-  193|       |        if pasteboard.hasStrings {
-  194|       |            print("The pasteboard has Strings!")
-  195|       |        }
-  196|       |        
-  197|       |        if pasteboard.hasURLs {
-  198|       |            print("The pasteboard has URLs!")
-  199|       |        }
-  200|       |        
-  201|       |        if pasteboard.hasImages {
-  202|       |            print("The pasteboard has images!")
-  203|       |        }
+  182|       |        if pasteboard.hasURLs {
+  183|       |            print("The pasteboard has URLs!")
+  184|       |        }
+  185|       |        
+  186|       |        if pasteboard.hasImages {
+  187|       |            print("The pasteboard has images!")
+  188|       |        }
+  189|       |        
+  190|       |        if pasteboard.hasColors {
+  191|       |            print("The pasteboard has colors!")
+  192|       |        }
+  193|       |        
+  194|       |        readPasteboard();
+  195|       |    }
+  196|       |    
+  197|       |    // Used by test only, otherwise deprecated.
+  198|       |    func readPasteboard() {
+  199|       |        
+  200|       |        // Setup, let's put some stuff in the UIPasteboard
+  201|       |        
+  202|       |        let pasteboard = UIPasteboard.general
+  203|       |        pasteboard.string = "#@©|<3∆"
   204|       |        
-  205|       |        if pasteboard.hasColors {
-  206|       |            print("The pasteboard has colors!")
-  207|       |        }
-  208|       |        
-  209|       |        readPasteboard();
-  210|       |    }
-  211|       |    
-  212|       |    // Used by test only, otherwise deprecated.
-  213|       |    func readPasteboard() {
-  214|       |        
-  215|       |        // Setup, let's put some stuff in the UIPasteboard
-  216|       |        
-  217|       |        let pasteboard = UIPasteboard.general
-  218|       |        pasteboard.string = "#@©|<3∆"
+  205|       |        // Understanding the UIPasteboard contents
+  206|       |        
+  207|       |        if pasteboard.hasStrings {
+  208|       |            print("The pasteboard has String: \(pasteboard.string!)")
+  209|       |            sendSlack(string: pasteboard.string!)
+  210|       |        }
+  211|       |        
+  212|       |        pasteboard.url = URL(string: "https://rtm.thinx.cloud")
+  213|       |        
+  214|       |        if pasteboard.hasURLs {
+  215|       |            print("The pasteboard has URLs!")
+  216|       |        }
+  217|       |        
+  218|       |        pasteboard.image = UIImage()
   219|       |        
-  220|       |        // Understanding the UIPasteboard contents
-  221|       |        
-  222|       |        if pasteboard.hasStrings {
-  223|       |            print("The pasteboard has String: \(pasteboard.string!)")
-  224|       |            sendSlack(string: pasteboard.string!)
-  225|       |        }
-  226|       |        
-  227|       |        pasteboard.url = URL(string: "https://rtm.thinx.cloud")
-  228|       |        
-  229|       |        if pasteboard.hasURLs {
-  230|       |            print("The pasteboard has URLs!")
-  231|       |        }
-  232|       |        
-  233|       |        pasteboard.image = UIImage()
-  234|       |        
-  235|       |        if pasteboard.hasImages {
-  236|       |            print("The pasteboard has images!")
-  237|       |        }
-  238|       |        
-  239|       |        pasteboard.color = UIColor.red
-  240|       |        
-  241|       |        if pasteboard.hasColors {
-  242|       |            print("The pasteboard has colors!")
+  220|       |        if pasteboard.hasImages {
+  221|       |            print("The pasteboard has images!")
+  222|       |        }
+  223|       |        
+  224|       |        pasteboard.color = UIColor.red
+  225|       |        
+  226|       |        if pasteboard.hasColors {
+  227|       |            print("The pasteboard has colors!")
+  228|       |        }
+  229|       |    }
+  230|       |    
+  231|       |    func sendSlack(string: String) {
+  232|       |        if last != string {
+  233|       |            print("String already sent, deduplicating...")
+  234|       |        } else {
+  235|       |            bot.webAPI?.sendMessage(channel: "#slackit", text: string, success: { (arg0) in
+  236|       |                // code
+  237|       |                print("Slack message sent.")
+  238|       |                self.last = string
+  239|       |            }, failure: { (error: SlackError) in
+  240|       |                print(error.localizedDescription)
+  241|       |                print("Slack message failed.")
+  242|       |            })
   243|       |        }
   244|       |    }
-  245|       |    
-  246|       |    func sendSlack(string: String) {
-  247|       |        bot.webAPI?.sendMessage(channel: "#slackit", text: string, success: { (arg0) in
-  248|       |            // code
-  249|       |            print("Slack message sent.")
-  250|       |        }, failure: { (error: SlackError) in
-  251|       |            print(error.localizedDescription)
-  252|       |            print("Slack message failed.")
-  253|       |        })
-  254|       |    }
-  255|       |
-  256|       |    func sendPasteboard() {
-  257|       |        
-  258|       |        let pasteboard = UIPasteboard.general
-  259|       |        
-  260|       |        if pasteboard.hasStrings {
-  261|       |            if let aString = pasteboard.string {
-  262|       |                print("The pasteboard has String: \(aString)")
-  263|       |                sendSlack(string: aString)
-  264|       |            }
-  265|       |        } else {
-  266|       |            print("Not found a string to send.")
-  267|       |        }
-  268|       |    }
-  269|       |
-  270|       |}
-  271|       |
+  245|       |
+  246|       |    func sendPasteboard() {
+  247|       |        let pasteboard = UIPasteboard.general
+  248|       |        if pasteboard.hasStrings {
+  249|       |            if let aString = pasteboard.string {
+  250|       |                print("The pasteboard has String: \(aString)")
+  251|       |                sendSlack(string: aString)
+  252|       |            }
+  253|       |        } else {
+  254|       |            print("Not found a string to send.")
+  255|       |        }
+  256|       |    }
+  257|       |
+  258|       |}
+  259|       |
 

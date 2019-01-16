@@ -1,0 +1,1509 @@
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKWebAPI/Sources/NetworkInterface.swift:
+    1|       |//
+    2|       |// NetworkInterface.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |#if os(Linux)
+   25|       |    import Dispatch
+   26|       |#endif
+   27|       |import Foundation
+   28|       |import SKCore
+   29|       |
+   30|       |public struct NetworkInterface {
+   31|       |
+   32|       |    private let apiUrl = "https://slack.com/api/"
+   33|       |    private let session = URLSession(configuration: .default)
+   34|       |
+   35|     20|    internal init() {}
+   36|       |
+   37|       |    internal func request(
+   38|       |        _ endpoint: Endpoint,
+   39|       |        parameters: [String: Any?],
+   40|       |        successClosure: @escaping ([String: Any]) -> Void,
+   41|       |        errorClosure: @escaping (SlackError) -> Void
+   42|     10|    ) {
+   43|     10|        guard let url = requestURL(for: endpoint, parameters: parameters) else {
+   44|      0|            errorClosure(SlackError.clientNetworkError)
+   45|      0|            return
+   46|     10|        }
+   47|     10|        let request = URLRequest(url: url)
+   48|     10|
+   49|     10|        session.dataTask(with: request) {(data, response, publicError) in
+   50|      9|            do {
+   51|      9|                successClosure(try NetworkInterface.handleResponse(data, response: response, publicError: publicError))
+   52|      9|            } catch let error {
+   53|      0|                errorClosure(error as? SlackError ?? SlackError.unknownError)
+   54|      8|            }
+   55|      8|        }.resume()
+   56|     10|    }
+   57|       |
+   58|       |    //Adapted from https://gist.github.com/erica/baa8a187a5b4796dab27
+   59|      0|    internal func synchronusRequest(_ endpoint: Endpoint, parameters: [String: Any?]) -> [String: Any]? {
+   60|      0|        guard let url = requestURL(for: endpoint, parameters: parameters) else {
+   61|      0|            return nil
+   62|      0|        }
+   63|      0|        let request = URLRequest(url: url)
+   64|      0|        var data: Data? = nil
+   65|      0|        var response: URLResponse? = nil
+   66|      0|        var error: Error? = nil
+   67|      0|        let semaphore = DispatchSemaphore(value: 0)
+   68|      0|        session.dataTask(with: request) { (reqData, reqResponse, reqError) in
+   69|      0|            data = reqData
+   70|      0|            response = reqResponse
+   71|      0|            error = reqError
+   72|      0|            if data == nil, let error = error { print(error) }
+   73|      0|            semaphore.signal()
+   74|      0|        }.resume()
+   75|      0|        _ = semaphore.wait(timeout: DispatchTime.distantFuture)
+   76|      0|        return try? NetworkInterface.handleResponse(data, response: response, publicError: error)
+   77|      0|    }
+   78|       |
+   79|       |    internal func customRequest(
+   80|       |        _ url: String,
+   81|       |        data: Data,
+   82|       |        success: @escaping (Bool) -> Void,
+   83|       |        errorClosure: @escaping (SlackError) -> Void
+   84|      0|    ) {
+   85|      0|        guard let string = url.removingPercentEncoding, let url =  URL(string: string) else {
+   86|      0|            errorClosure(SlackError.clientNetworkError)
+   87|      0|            return
+   88|      0|        }
+   89|      0|        var request = URLRequest(url:url)
+   90|      0|        request.httpMethod = "POST"
+   91|      0|        let contentType = "application/json"
+   92|      0|        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+   93|      0|        request.httpBody = data
+   94|      0|
+   95|      0|        session.dataTask(with: request) {(_, _, publicError) in
+   96|      0|            if publicError == nil {
+   97|      0|                success(true)
+   98|      0|            } else {
+   99|      0|                errorClosure(SlackError.clientNetworkError)
+  100|      0|            }
+  101|      0|        }.resume()
+  102|      0|    }
+  103|       |
+  104|       |    internal func uploadRequest(
+  105|       |        data: Data,
+  106|       |        parameters: [String: Any?],
+  107|       |        successClosure: @escaping ([String: Any]) -> Void, errorClosure: @escaping (SlackError) -> Void
+  108|      0|    ) {
+  109|      0|        guard
+  110|      0|            let url = requestURL(for: .filesUpload, parameters: parameters),
+  111|      0|            let filename = parameters["filename"] as? String,
+  112|      0|            let filetype = parameters["filetype"] as? String
+  113|      0|        else {
+  114|      0|            errorClosure(SlackError.clientNetworkError)
+  115|      0|            return
+  116|      0|        }
+  117|      0|        var request = URLRequest(url:url)
+  118|      0|        request.httpMethod = "POST"
+  119|      0|        let boundaryConstant = randomBoundary()
+  120|      0|        let contentType = "multipart/form-data; boundary=" + boundaryConstant
+  121|      0|        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+  122|      0|        request.httpBody = requestBodyData(data: data, boundaryConstant: boundaryConstant, filename: filename, filetype: filetype)
+  123|      0|
+  124|      0|        session.dataTask(with: request) {(data, response, publicError) in
+  125|      0|            do {
+  126|      0|                successClosure(try NetworkInterface.handleResponse(data, response: response, publicError: publicError))
+  127|      0|            } catch let error {
+  128|      0|                errorClosure(error as? SlackError ?? SlackError.unknownError)
+  129|      0|            }
+  130|      0|        }.resume()
+  131|      0|    }
+  132|       |
+  133|       |    internal static func handleResponse(_ data: Data?, response: URLResponse?, publicError: Error?) throws -> [String: Any] {
+  134|       |        guard let data = data, let response = response as? HTTPURLResponse else {
+  135|       |            throw SlackError.clientNetworkError
+  136|       |        }
+  137|       |        do {
+  138|       |            guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+  139|       |                throw SlackError.clientJSONError
+  140|       |            }
+  141|       |
+  142|       |            switch response.statusCode {
+  143|       |            case 200:
+  144|       |                if json["ok"] as? Bool == true {
+  145|       |                    return json
+  146|       |                } else {
+  147|       |                    if let errorString = json["error"] as? String {
+  148|      0|                        throw SlackError(rawValue: errorString) ?? .unknownError
+  149|       |                    } else {
+  150|       |                        throw SlackError.unknownError
+  151|       |                    }
+  152|       |                }
+  153|       |            case 429:
+  154|       |                throw SlackError.tooManyRequests
+  155|       |            default:
+  156|       |                throw SlackError.clientNetworkError
+  157|       |            }
+  158|       |        } catch let error {
+  159|       |            if let slackError = error as? SlackError {
+  160|       |                throw slackError
+  161|       |            } else {
+  162|       |                throw SlackError.unknownError
+  163|       |            }
+  164|       |        }
+  165|       |    }
+  166|       |
+  167|       |    private func requestURL(for endpoint: Endpoint, parameters: [String: Any?]) -> URL? {
+  168|       |        var components = URLComponents(string: "\(apiUrl)\(endpoint.rawValue)")
+  169|       |        if parameters.count > 0 {
+  170|     70|            components?.queryItems = filterNilParameters(parameters).map { URLQueryItem(name: $0.0, value: "\($0.1)") }
+  171|       |        }
+  172|       |
+  173|       |        // As discussed http://www.openradar.me/24076063 and https://stackoverflow.com/a/37314144/407523, Apple considers
+  174|       |        // a + and ? as valid characters in a URL query string, but Slack has recently started enforcing that they be
+  175|       |        // encoded when included in a query string. As a result, we need to manually apply the encoding after Apple's
+  176|       |        // default encoding is applied.
+  177|       |        var encodedQuery = components?.percentEncodedQuery
+  178|       |        encodedQuery = encodedQuery?.replacingOccurrences(of: ">", with: "%3E")
+  179|       |        encodedQuery = encodedQuery?.replacingOccurrences(of: "<", with: "%3C")
+  180|       |        encodedQuery = encodedQuery?.replacingOccurrences(of: "@", with: "%40")
+  181|       |
+  182|       |        encodedQuery = encodedQuery?.replacingOccurrences(of: "?", with: "%3F")
+  183|       |        encodedQuery = encodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+  184|       |        components?.percentEncodedQuery = encodedQuery
+  185|       |
+  186|       |        return components?.url
+  187|       |    }
+  188|       |
+  189|       |    private func requestBodyData(data: Data, boundaryConstant: String, filename: String, filetype: String) -> Data? {
+  190|       |        let boundaryStart = "--\(boundaryConstant)\r\n"
+  191|       |        let boundaryEnd = "--\(boundaryConstant)--\r\n"
+  192|       |        let contentDispositionString = "Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n"
+  193|       |        let contentTypeString = "Content-Type: \(filetype)\r\n\r\n"
+  194|       |        let dataEnd = "\r\n"
+  195|       |
+  196|       |        guard
+  197|       |            let boundaryStartData = boundaryStart.data(using: .utf8),
+  198|       |            let dispositionData = contentDispositionString.data(using: .utf8),
+  199|       |            let contentTypeData = contentTypeString.data(using: .utf8),
+  200|       |            let boundaryEndData = boundaryEnd.data(using: .utf8),
+  201|       |            let dataEndData = dataEnd.data(using: .utf8)
+  202|       |        else {
+  203|       |            return nil
+  204|       |        }
+  205|       |
+  206|       |        var requestBodyData = Data()
+  207|       |        requestBodyData.append(contentsOf: boundaryStartData)
+  208|       |        requestBodyData.append(contentsOf: dispositionData)
+  209|       |        requestBodyData.append(contentsOf: contentTypeData)
+  210|       |        requestBodyData.append(contentsOf: data)
+  211|       |        requestBodyData.append(contentsOf: dataEndData)
+  212|       |        requestBodyData.append(contentsOf: boundaryEndData)
+  213|       |        return requestBodyData
+  214|       |    }
+  215|       |
+  216|       |    private func randomBoundary() -> String {
+  217|       |        #if os(Linux)
+  218|       |            return "slackkit.boundary.\(Int(random()))\(Int(random()))"
+  219|       |        #else
+  220|       |            return "slackkit.boundary.\(arc4random())\(arc4random())"
+  221|       |        #endif
+  222|       |    }
+  223|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKWebAPI/Sources/WebAPI.swift:
+    1|       |//
+    2|       |// WebAPI.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |//swiftlint:disable file_length
+   25|       |import Foundation
+   26|       |@_exported import SKCore
+   27|       |
+   28|       |public final class WebAPI {
+   29|       |
+   30|       |    public typealias SuccessClosure = (_ success: Bool) -> Void
+   31|       |    public typealias FailureClosure = (_ error: SlackError) -> Void
+   32|       |    public typealias CommentClosure = (_ comment: Comment) -> Void
+   33|       |    public typealias ChannelClosure = (_ channel: Channel) -> Void
+   34|       |    public typealias MessageClosure = (_ message: Message) -> Void
+   35|       |    public typealias HistoryClosure = (_ history: History) -> Void
+   36|       |    public typealias FileClosure = (_ file: File) -> Void
+   37|       |    public typealias ItemsClosure = (_ items: [Item]?) -> Void
+   38|       |    public typealias AuthTestClosure = (_ user: String?, _ team: String?) -> Void
+   39|       |
+   40|       |    public enum InfoType: String {
+   41|       |        case purpose, topic
+   42|       |    }
+   43|       |
+   44|       |    public enum ParseMode: String {
+   45|       |        case full, none
+   46|       |    }
+   47|       |
+   48|       |    public enum Presence: String {
+   49|       |        case auto, away
+   50|       |    }
+   51|       |
+   52|       |    fileprivate enum ChannelType: String {
+   53|       |        case channel, group, im
+   54|       |    }
+   55|       |
+   56|       |    public enum ConversationType: String {
+   57|       |        case public_channel, private_channel, mpim, im
+   58|       |    }
+   59|       |
+   60|       |    fileprivate let networkInterface: NetworkInterface
+   61|       |    fileprivate let token: String
+   62|       |
+   63|     10|    public init(token: String) {
+   64|     10|        self.networkInterface = NetworkInterface()
+   65|     10|        self.token = token
+   66|     10|    }
+   67|       |}
+   68|       |
+   69|       |// MARK: - RTM
+   70|       |extension WebAPI {
+   71|       |    public static func rtmStart(
+   72|       |        token: String,
+   73|       |        batchPresenceAware: Bool = false,
+   74|       |        mpimAware: Bool? = nil,
+   75|       |        noLatest: Bool = false,
+   76|       |        noUnreads: Bool? = nil,
+   77|       |        presenceSub: Bool = false,
+   78|       |        simpleLatest: Bool? = nil,
+   79|       |        success: ((_ response: [String: Any]) -> Void)?,
+   80|       |        failure: FailureClosure?
+   81|     10|    ) {
+   82|     10|        let parameters: [String: Any?] =
+   83|     10|            [
+   84|     10|                "token": token,
+   85|     10|                "batch_presence_aware": batchPresenceAware,
+   86|     10|                "mpim_aware": mpimAware,
+   87|     10|                "no_latest": noLatest,
+   88|     10|                "no_unreads": noUnreads,
+   89|     10|                "presence_sub": presenceSub,
+   90|     10|                "simple_latest": simpleLatest
+   91|     10|        ]
+   92|     10|        NetworkInterface().request(.rtmStart, parameters: parameters, successClosure: {(response) in
+   93|     10|            success?(response)
+   94|     10|        }) {(error) in
+   95|     10|            failure?(error)
+   96|     10|        }
+   97|     10|    }
+   98|       |
+   99|       |    public static func rtmConnect(
+  100|       |        token: String,
+  101|       |        batchPresenceAware: Bool = false,
+  102|       |        presenceSub: Bool = false,
+  103|       |        success: ((_ response: [String: Any]) -> Void)?,
+  104|       |        failure: FailureClosure?
+  105|      0|    ) {
+  106|      0|        let parameters: [String: Any?] =
+  107|      0|            [
+  108|      0|                "token": token,
+  109|      0|                "batch_presence_aware": batchPresenceAware,
+  110|      0|                "presence_sub": presenceSub
+  111|      0|            ]
+  112|      0|        NetworkInterface().request(.rtmConnect, parameters: parameters, successClosure: {(response) in
+  113|      0|            success?(response)
+  114|      0|        }) {(error) in
+  115|      0|            failure?(error)
+  116|      0|        }
+  117|      0|
+  118|      0|    }
+  119|       |}
+  120|       |
+  121|       |// MARK: - Auth
+  122|       |extension WebAPI {
+  123|      0|    public func authenticationTest(success: AuthTestClosure?, failure: FailureClosure?) {
+  124|      0|        networkInterface.request(.authTest, parameters: ["token": token], successClosure: { (response) in
+  125|      0|            success?(response["user_id"] as? String, response["team_id"] as? String)
+  126|      0|        }) {(error) in
+  127|      0|            failure?(error)
+  128|      0|        }
+  129|      0|    }
+  130|       |
+  131|      0|    public static func oauthAccess(clientID: String, clientSecret: String, code: String, redirectURI: String? = nil) -> [String: Any]? {
+  132|      0|        let parameters: [String: Any?] = ["client_id": clientID, "client_secret": clientSecret, "code": code, "redirect_uri": redirectURI]
+  133|      0|        return NetworkInterface().synchronusRequest(.oauthAccess, parameters: parameters)
+  134|      0|    }
+  135|       |
+  136|       |    public static func oauthRevoke(
+  137|       |        token: String,
+  138|       |        test: Bool? = nil,
+  139|       |        success: SuccessClosure?,
+  140|       |        failure: FailureClosure?
+  141|      0|    ) {
+  142|      0|        let parameters: [String: Any?] = ["token": token, "test": test]
+  143|      0|        NetworkInterface().request(.authRevoke, parameters: parameters, successClosure: { _ in
+  144|      0|            success?(true)
+  145|      0|        }) {(error) in
+  146|      0|            failure?(error)
+  147|      0|        }
+  148|      0|    }
+  149|       |}
+  150|       |
+  151|       |// MARK: - Channels
+  152|       |extension WebAPI {
+  153|       |    public func channelHistory(
+  154|       |        id: String,
+  155|       |        latest: String = "\(Date().timeIntervalSince1970)",
+  156|       |        oldest: String = "0", inclusive: Bool = false,
+  157|       |        count: Int = 100, unreads: Bool = false,
+  158|       |        success: HistoryClosure?,
+  159|       |        failure: FailureClosure?
+  160|      0|    ) {
+  161|      0|        history(.channelsHistory,
+  162|      0|                id: id,
+  163|      0|                latest: latest,
+  164|      0|                oldest: oldest,
+  165|      0|                inclusive: inclusive,
+  166|      0|                count: count,
+  167|      0|                unreads: unreads,
+  168|      0|                success: {(history) in
+  169|      0|                    success?(history)
+  170|      0|        }) {(error) in
+  171|      0|            failure?(error)
+  172|      0|        }
+  173|      0|    }
+  174|       |
+  175|      0|    public func channelInfo(id: String, success: ChannelClosure?, failure: FailureClosure?) {
+  176|      0|        info(.channelsInfo, type:.channel, id: id, success: {(channel) in
+  177|      0|            success?(channel)
+  178|      0|        }) {(error) in
+  179|      0|            failure?(error)
+  180|      0|        }
+  181|      0|    }
+  182|       |
+  183|       |    public func channelsList(
+  184|       |        excludeArchived: Bool = false,
+  185|       |        excludeMembers: Bool = false,
+  186|       |        success: ((_ channels: [[String: Any]]?) -> Void)?,
+  187|       |        failure: FailureClosure?
+  188|      0|    ) {
+  189|      0|        list(.channelsList, type:.channel, excludeArchived: excludeArchived, excludeMembers: excludeMembers, success: {(channels) in
+  190|      0|            success?(channels)
+  191|      0|        }) {(error) in
+  192|      0|            failure?(error)
+  193|      0|        }
+  194|      0|    }
+  195|       |
+  196|      0|    public func markChannel(channel: String, timestamp: String, success: ((_ ts: String) -> Void)?, failure: FailureClosure?) {
+  197|      0|        mark(.channelsMark, channel: channel, timestamp: timestamp, success: {(ts) in
+  198|      0|            success?(ts)
+  199|      0|        }) {(error) in
+  200|      0|            failure?(error)
+  201|      0|        }
+  202|      0|    }
+  203|       |
+  204|      0|    public func createChannel(channel: String, success: ChannelClosure?, failure: FailureClosure?) {
+  205|      0|        create(.channelsCreate, name: channel, success: success, failure: failure)
+  206|      0|    }
+  207|       |
+  208|      0|    public func inviteToChannel(_ channel: String, user: String, success: SuccessClosure?, failure: FailureClosure?) {
+  209|      0|        invite(.channelsInvite, channel: channel, user: user, success: success, failure: failure)
+  210|      0|    }
+  211|       |
+  212|      0|    public func setChannelPurpose(channel: String, purpose: String, success: SuccessClosure?, failure: FailureClosure?) {
+  213|      0|        setInfo(.channelsSetPurpose, type: .purpose, channel: channel, text: purpose, success: {(purposeSet) in
+  214|      0|            success?(purposeSet)
+  215|      0|        }) {(error) in
+  216|      0|            failure?(error)
+  217|      0|        }
+  218|      0|    }
+  219|       |
+  220|      0|    public func setChannelTopic(channel: String, topic: String, success: SuccessClosure?, failure: FailureClosure?) {
+  221|      0|        setInfo(.channelsSetTopic, type: .topic, channel: channel, text: topic, success: {(topicSet) in
+  222|      0|            success?(topicSet)
+  223|      0|        }) {(error) in
+  224|      0|            failure?(error)
+  225|      0|        }
+  226|      0|    }
+  227|       |}
+  228|       |
+  229|       |// MARK: - Messaging
+  230|       |extension WebAPI {
+  231|      0|    public func deleteMessage(channel: String, ts: String, success: SuccessClosure?, failure: FailureClosure?) {
+  232|      0|        let parameters: [String: Any] = ["token": token, "channel": channel, "ts": ts]
+  233|      0|        networkInterface.request(.chatDelete, parameters: parameters, successClosure: { _ in
+  234|      0|            success?(true)
+  235|      0|        }) {(error) in
+  236|      0|            failure?(error)
+  237|      0|        }
+  238|      0|    }
+  239|       |
+  240|       |    public func sendMessage(
+  241|       |        channel: String,
+  242|       |        text: String,
+  243|       |        username: String? = nil,
+  244|       |        asUser: Bool? = nil,
+  245|       |        parse: ParseMode? = nil,
+  246|       |        linkNames: Bool? = nil,
+  247|       |        attachments: [Attachment?]? = nil,
+  248|       |        unfurlLinks: Bool? = nil,
+  249|       |        unfurlMedia: Bool? = nil,
+  250|       |        iconURL: String? = nil,
+  251|       |        iconEmoji: String? = nil,
+  252|       |        success: (((ts: String?, channel: String?)) -> Void)?,
+  253|       |        failure: FailureClosure?
+  254|      0|    ) {
+  255|      0|        let parameters: [String: Any?] = [
+  256|      0|            "token": token,
+  257|      0|            "channel": channel,
+  258|      0|            "text": text,
+  259|      0|            "as_user": asUser,
+  260|      0|            "parse": parse?.rawValue,
+  261|      0|            "link_names": linkNames,
+  262|      0|            "unfurl_links": unfurlLinks,
+  263|      0|            "unfurlMedia": unfurlMedia,
+  264|      0|            "username": username,
+  265|      0|            "icon_url": iconURL,
+  266|      0|            "icon_emoji": iconEmoji,
+  267|      0|            "attachments": encodeAttachments(attachments)
+  268|      0|        ]
+  269|      0|        networkInterface.request(.chatPostMessage, parameters: parameters, successClosure: {(response) in
+  270|      0|            success?((ts: response["ts"] as? String, response["channel"] as? String))
+  271|      0|        }) {(error) in
+  272|      0|            failure?(error)
+  273|      0|        }
+  274|      0|    }
+  275|       |
+  276|       |    public func sendThreadedMessage(
+  277|       |        channel: String,
+  278|       |        thread: String,
+  279|       |        text: String,
+  280|       |        broadcastReply: Bool = false,
+  281|       |        username: String? = nil,
+  282|       |        asUser: Bool? = nil,
+  283|       |        parse: ParseMode? = nil,
+  284|       |        linkNames: Bool? = nil,
+  285|       |        attachments: [Attachment?]? = nil,
+  286|       |        unfurlLinks: Bool? = nil,
+  287|       |        unfurlMedia: Bool? = nil,
+  288|       |        iconURL: String? = nil,
+  289|       |        iconEmoji: String? = nil,
+  290|       |        success: (((ts: String?, channel: String?)) -> Void)?,
+  291|       |        failure: FailureClosure?
+  292|      0|    ) {
+  293|      0|        let parameters: [String: Any?] = [
+  294|      0|            "token": token,
+  295|      0|            "channel": channel,
+  296|      0|            "thread_ts": thread,
+  297|      0|            "text": text,
+  298|      0|            "broadcastReply": broadcastReply,
+  299|      0|            "as_user": asUser,
+  300|      0|            "parse": parse?.rawValue,
+  301|      0|            "link_names": linkNames,
+  302|      0|            "unfurl_links": unfurlLinks,
+  303|      0|            "unfurlMedia": unfurlMedia,
+  304|      0|            "username": username,
+  305|      0|            "icon_url": iconURL,
+  306|      0|            "icon_emoji": iconEmoji,
+  307|      0|            "attachments": encodeAttachments(attachments)
+  308|      0|        ]
+  309|      0|        networkInterface.request(.chatPostMessage, parameters: parameters, successClosure: {(response) in
+  310|      0|            success?((ts: response["ts"] as? String, response["channel"] as? String))
+  311|      0|        }) {(error) in
+  312|      0|            failure?(error)
+  313|      0|        }
+  314|      0|    }
+  315|       |
+  316|       |    public func sendMeMessage(
+  317|       |        channel: String,
+  318|       |        text: String,
+  319|       |        success: (((ts: String?, channel: String?)) -> Void)?,
+  320|       |        failure: FailureClosure?
+  321|      0|    ) {
+  322|      0|        let parameters: [String: Any?] = ["token": token, "channel": channel, "text":  text]
+  323|      0|        networkInterface.request(.chatMeMessage, parameters: parameters, successClosure: {(response) in
+  324|      0|            success?((ts: response["ts"] as? String, response["channel"] as? String))
+  325|      0|        }) {(error) in
+  326|      0|            failure?(error)
+  327|      0|        }
+  328|      0|    }
+  329|       |
+  330|       |    public func updateMessage(
+  331|       |        channel: String,
+  332|       |        ts: String,
+  333|       |        message: String,
+  334|       |        attachments: [Attachment?]? = nil,
+  335|       |        parse: ParseMode = .none,
+  336|       |        linkNames: Bool = false,
+  337|       |        success: SuccessClosure?,
+  338|       |        failure: FailureClosure?
+  339|      0|    ) {
+  340|      0|        let parameters: [String: Any?] = [
+  341|      0|            "token": token,
+  342|      0|            "channel": channel,
+  343|      0|            "ts": ts,
+  344|      0|            "text": message,
+  345|      0|            "parse": parse.rawValue,
+  346|      0|            "link_names": linkNames,
+  347|      0|            "attachments": encodeAttachments(attachments)
+  348|      0|        ]
+  349|      0|        networkInterface.request(.chatUpdate, parameters: parameters, successClosure: { _ in
+  350|      0|            success?(true)
+  351|      0|        }) {(error) in
+  352|      0|            failure?(error)
+  353|      0|        }
+  354|      0|    }
+  355|       |}
+  356|       |
+  357|       |// MARK: - Do Not Disturb
+  358|       |extension WebAPI {
+  359|      0|    public func dndInfo(user: String? = nil, success: ((_ status: DoNotDisturbStatus) -> Void)?, failure: FailureClosure?) {
+  360|      0|        let parameters: [String: Any?] = ["token": token, "user": user]
+  361|      0|        networkInterface.request(.dndInfo, parameters: parameters, successClosure: {(response) in
+  362|      0|            success?(DoNotDisturbStatus(status: response))
+  363|      0|        }) {(error) in
+  364|      0|            failure?(error)
+  365|      0|        }
+  366|      0|    }
+  367|       |
+  368|       |    public func dndTeamInfo(
+  369|       |        users: [String]? = nil,
+  370|       |        success: ((_ statuses: [String: DoNotDisturbStatus]) -> Void)?,
+  371|       |        failure: FailureClosure?
+  372|      0|    ) {
+  373|      0|        let parameters: [String: Any?] = ["token": token, "users": users?.joined(separator: ",")]
+  374|      0|        networkInterface.request(.dndTeamInfo, parameters: parameters, successClosure: {(response) in
+  375|      0|            guard let usersDictionary = response["users"] as? [String: Any] else {
+  376|      0|                success?([:])
+  377|      0|                return
+  378|      0|            }
+  379|      0|            success?(self.enumerateDNDStatuses(usersDictionary))
+  380|      0|        }) {(error) in
+  381|      0|            failure?(error)
+  382|      0|        }
+  383|      0|    }
+  384|       |}
+  385|       |
+  386|       |// MARK: - Emoji
+  387|       |extension WebAPI {
+  388|      0|    public func emojiList(success: ((_ emojiList: [String: Any]?) -> Void)?, failure: FailureClosure?) {
+  389|      0|        networkInterface.request(.emojiList, parameters: ["token": token], successClosure: {(response) in
+  390|      0|            success?(response["emoji"] as? [String: Any])
+  391|      0|        }) {(error) in
+  392|      0|            failure?(error)
+  393|      0|        }
+  394|      0|    }
+  395|       |}
+  396|       |
+  397|       |// MARK: - Files
+  398|       |extension WebAPI {
+  399|      0|    public func deleteFile(fileID: String, success: SuccessClosure?, failure: FailureClosure?) {
+  400|      0|        let parameters = ["token": token, "file": fileID]
+  401|      0|        networkInterface.request(.filesDelete, parameters: parameters, successClosure: { _ in
+  402|      0|            success?(true)
+  403|      0|        }) {(error) in
+  404|      0|            failure?(error)
+  405|      0|        }
+  406|      0|    }
+  407|       |
+  408|       |    public func fileInfo(
+  409|       |        fileID: String,
+  410|       |        commentCount: Int = 100,
+  411|       |        totalPages: Int = 1,
+  412|       |        success: FileClosure?,
+  413|       |        failure: FailureClosure?
+  414|      0|    ) {
+  415|      0|        let parameters: [String: Any] = ["token": token, "file": fileID, "count": commentCount, "totalPages": totalPages]
+  416|      0|        networkInterface.request(.filesInfo, parameters: parameters, successClosure: {(response) in
+  417|      0|            var file = File(file: response["file"] as? [String: Any])
+  418|      0|            (response["comments"] as? [[String: Any]])?.forEach { comment in
+  419|      0|                let comment = Comment(comment: comment)
+  420|      0|                if let id = comment.id {
+  421|      0|                    file.comments[id] = comment
+  422|      0|                }
+  423|      0|            }
+  424|      0|            success?(file)
+  425|      0|        }) {(error) in
+  426|      0|            failure?(error)
+  427|      0|        }
+  428|      0|    }
+  429|       |
+  430|       |    public func uploadFile(
+  431|       |        file: Data,
+  432|       |        filename: String,
+  433|       |        filetype: String = "auto",
+  434|       |        title: String? = nil,
+  435|       |        initialComment: String? = nil,
+  436|       |        channels: [String]? = nil,
+  437|       |        success: FileClosure?,
+  438|       |        failure: FailureClosure?
+  439|      0|    ) {
+  440|      0|        let parameters: [String: Any?] = [
+  441|      0|            "token": token,
+  442|      0|            "filename": filename,
+  443|      0|            "filetype": filetype,
+  444|      0|            "title": title,
+  445|      0|            "initial_comment": initialComment,
+  446|      0|            "channels": channels?.joined(separator: ",")
+  447|      0|        ]
+  448|      0|        networkInterface.uploadRequest(data: file, parameters: parameters, successClosure: {(response) in
+  449|      0|            success?(File(file: response["file"] as? [String: Any]))
+  450|      0|        }) {(error) in
+  451|      0|            failure?(error)
+  452|      0|        }
+  453|      0|    }
+  454|       |}
+  455|       |
+  456|       |// MARK: - File Comments
+  457|       |extension WebAPI {
+  458|      0|    public func addFileComment(fileID: String, comment: String, success: CommentClosure?, failure: FailureClosure?) {
+  459|      0|        let parameters: [String: Any] = ["token": token, "file": fileID, "comment": comment]
+  460|      0|        networkInterface.request(.filesCommentsAdd, parameters: parameters, successClosure: {(response) in
+  461|      0|            success?(Comment(comment: response["comment"] as? [String: Any]))
+  462|      0|        }) {(error) in
+  463|      0|            failure?(error)
+  464|      0|        }
+  465|      0|    }
+  466|       |
+  467|      0|    public func editFileComment(fileID: String, commentID: String, comment: String, success: CommentClosure?, failure: FailureClosure?) {
+  468|      0|        let parameters: [String: Any] = ["token": token, "file": fileID, "id": commentID, "comment": comment]
+  469|      0|        networkInterface.request(.filesCommentsEdit, parameters: parameters, successClosure: {(response) in
+  470|      0|            success?(Comment(comment: response["comment"] as? [String: Any]))
+  471|      0|        }) {(error) in
+  472|      0|            failure?(error)
+  473|      0|        }
+  474|      0|    }
+  475|       |
+  476|      0|    public func deleteFileComment(fileID: String, commentID: String, success: SuccessClosure?, failure: FailureClosure?) {
+  477|      0|        let parameters: [String: Any] = ["token": token, "file": fileID, "id": commentID]
+  478|      0|        networkInterface.request(.filesCommentsDelete, parameters: parameters, successClosure: { _ in
+  479|      0|            success?(true)
+  480|      0|        }) {(error) in
+  481|      0|            failure?(error)
+  482|      0|        }
+  483|      0|    }
+  484|       |}
+  485|       |
+  486|       |// MARK: - Groups
+  487|       |extension WebAPI {
+  488|      0|    public func closeGroup(groupID: String, success: SuccessClosure?, failure: FailureClosure?) {
+  489|      0|        close(.groupsClose, channelID: groupID, success: {(closed) in
+  490|      0|            success?(closed)
+  491|      0|        }) {(error) in
+  492|      0|            failure?(error)
+  493|      0|        }
+  494|      0|    }
+  495|       |
+  496|       |    public func groupHistory(
+  497|       |        id: String,
+  498|       |        latest: String = "\(Date().timeIntervalSince1970)",
+  499|       |        oldest: String = "0",
+  500|       |        inclusive: Bool = false,
+  501|       |        count: Int = 100,
+  502|       |        unreads: Bool = false,
+  503|       |        success: HistoryClosure?,
+  504|       |        failure: FailureClosure?
+  505|      0|    ) {
+  506|      0|        history(.groupsHistory,
+  507|      0|                id: id,
+  508|      0|                latest: latest,
+  509|      0|                oldest: oldest,
+  510|      0|                inclusive: inclusive,
+  511|      0|                count: count,
+  512|      0|                unreads: unreads,
+  513|      0|                success: {(history) in
+  514|      0|                    success?(history)
+  515|      0|        }) {(error) in
+  516|      0|            failure?(error)
+  517|      0|        }
+  518|      0|    }
+  519|       |
+  520|      0|    public func groupInfo(id: String, success: ChannelClosure?, failure: FailureClosure?) {
+  521|      0|        info(.groupsInfo, type:.group, id: id, success: {(channel) in
+  522|      0|            success?(channel)
+  523|      0|        }) {(error) in
+  524|      0|            failure?(error)
+  525|      0|        }
+  526|      0|    }
+  527|       |
+  528|       |    public func groupsList(
+  529|       |        excludeArchived: Bool = false,
+  530|       |        excludeMembers: Bool = false,
+  531|       |        success: ((_ channels: [[String: Any]]?) -> Void)?,
+  532|       |        failure: FailureClosure?
+  533|      0|    ) {
+  534|      0|        list(.groupsList, type:.group, excludeArchived: excludeArchived, excludeMembers: excludeMembers, success: {(channels) in
+  535|      0|            success?(channels)
+  536|      0|        }) {(error) in
+  537|      0|            failure?(error)
+  538|      0|        }
+  539|      0|    }
+  540|       |
+  541|      0|    public func markGroup(channel: String, timestamp: String, success: ((_ ts: String) -> Void)?, failure: FailureClosure?) {
+  542|      0|        mark(.groupsMark, channel: channel, timestamp: timestamp, success: {(ts) in
+  543|      0|            success?(ts)
+  544|      0|        }) {(error) in
+  545|      0|            failure?(error)
+  546|      0|        }
+  547|      0|    }
+  548|       |
+  549|      0|    public func openGroup(channel: String, success: SuccessClosure?, failure: FailureClosure?) {
+  550|      0|        let parameters = ["token": token, "channel": channel]
+  551|      0|        networkInterface.request(.groupsOpen, parameters: parameters, successClosure: { _ in
+  552|      0|            success?(true)
+  553|      0|        }) {(error) in
+  554|      0|            failure?(error)
+  555|      0|        }
+  556|      0|    }
+  557|       |
+  558|      0|    public func setGroupPurpose(channel: String, purpose: String, success: SuccessClosure?, failure: FailureClosure?) {
+  559|      0|        setInfo(.groupsSetPurpose, type: .purpose, channel: channel, text: purpose, success: {(purposeSet) in
+  560|      0|            success?(purposeSet)
+  561|      0|        }) {(error) in
+  562|      0|            failure?(error)
+  563|      0|        }
+  564|      0|    }
+  565|       |
+  566|      0|    public func setGroupTopic(channel: String, topic: String, success: SuccessClosure?, failure: FailureClosure?) {
+  567|      0|        setInfo(.groupsSetTopic, type: .topic, channel: channel, text: topic, success: {(topicSet) in
+  568|      0|            success?(topicSet)
+  569|      0|        }) {(error) in
+  570|      0|            failure?(error)
+  571|      0|        }
+  572|      0|    }
+  573|       |}
+  574|       |
+  575|       |// MARK: - IM
+  576|       |extension WebAPI {
+  577|      0|    public func closeIM(channel: String, success: SuccessClosure?, failure: FailureClosure?) {
+  578|      0|        close(.imClose, channelID: channel, success: {(closed) in
+  579|      0|            success?(closed)
+  580|      0|        }) {(error) in
+  581|      0|            failure?(error)
+  582|      0|        }
+  583|      0|    }
+  584|       |
+  585|       |    public func imHistory(
+  586|       |        id: String,
+  587|       |        latest: String = "\(Date().timeIntervalSince1970)",
+  588|       |        oldest: String = "0",
+  589|       |        inclusive: Bool = false,
+  590|       |        count: Int = 100,
+  591|       |        unreads: Bool = false,
+  592|       |        success: HistoryClosure?,
+  593|       |        failure: FailureClosure?
+  594|      0|    ) {
+  595|      0|        history(.imHistory,
+  596|      0|                id: id,
+  597|      0|                latest: latest,
+  598|      0|                oldest: oldest,
+  599|      0|                inclusive: inclusive,
+  600|      0|                count: count,
+  601|      0|                unreads: unreads,
+  602|      0|                success: {(history) in
+  603|      0|                    success?(history)
+  604|      0|        }) {(error) in
+  605|      0|            failure?(error)
+  606|      0|        }
+  607|      0|    }
+  608|       |
+  609|       |    public func imsList(
+  610|       |        excludeArchived: Bool = false,
+  611|       |        excludeMembers: Bool = false,
+  612|       |        success: ((_ channels: [[String: Any]]?) -> Void)?,
+  613|       |        failure: FailureClosure?
+  614|      0|    ) {
+  615|      0|        list(.imList, type:.im, excludeArchived: excludeArchived, excludeMembers: excludeMembers, success: {(channels) in
+  616|      0|            success?(channels)
+  617|      0|        }) {(error) in
+  618|      0|            failure?(error)
+  619|      0|        }
+  620|      0|    }
+  621|       |
+  622|      0|    public func markIM(channel: String, timestamp: String, success: ((_ ts: String) -> Void)?, failure: FailureClosure?) {
+  623|      0|        mark(.imMark, channel: channel, timestamp: timestamp, success: {(ts) in
+  624|      0|            success?(ts)
+  625|      0|        }) {(error) in
+  626|      0|            failure?(error)
+  627|      0|        }
+  628|      0|    }
+  629|       |
+  630|      0|    public func openIM(userID: String, success: ((_ imID: String?) -> Void)?, failure: FailureClosure?) {
+  631|      0|        let parameters = ["token": token, "user": userID]
+  632|      0|        networkInterface.request(.imOpen, parameters: parameters, successClosure: {(response) in
+  633|      0|            let group = response["channel"] as? [String: Any]
+  634|      0|            success?(group?["id"] as? String)
+  635|      0|        }) {(error) in
+  636|      0|            failure?(error)
+  637|      0|        }
+  638|      0|    }
+  639|       |}
+  640|       |
+  641|       |// MARK: - MPIM
+  642|       |extension WebAPI {
+  643|      0|    public func closeMPIM(channel: String, success: SuccessClosure?, failure: FailureClosure?) {
+  644|      0|        close(.mpimClose, channelID: channel, success: {(closed) in
+  645|      0|            success?(closed)
+  646|      0|        }) {(error) in
+  647|      0|            failure?(error)
+  648|      0|        }
+  649|      0|    }
+  650|       |
+  651|       |    public func mpimHistory(
+  652|       |        id: String,
+  653|       |        latest: String = "\(Date().timeIntervalSince1970)",
+  654|       |        oldest: String = "0",
+  655|       |        inclusive: Bool = false,
+  656|       |        count: Int = 100,
+  657|       |        unreads: Bool = false,
+  658|       |        success: HistoryClosure?,
+  659|       |        failure: FailureClosure?
+  660|      0|    ) {
+  661|      0|        history(.mpimHistory,
+  662|      0|                id: id,
+  663|      0|                latest: latest,
+  664|      0|                oldest: oldest,
+  665|      0|                inclusive: inclusive,
+  666|      0|                count: count,
+  667|      0|                unreads: unreads,
+  668|      0|                success: {(history) in
+  669|      0|                    success?(history)
+  670|      0|        }) {(error) in
+  671|      0|            failure?(error)
+  672|      0|        }
+  673|      0|    }
+  674|       |
+  675|       |    public func mpimsList(
+  676|       |        excludeArchived: Bool = false,
+  677|       |        excludeMembers: Bool = false,
+  678|       |        success: ((_ channels: [[String: Any]]?) -> Void)?,
+  679|       |        failure: FailureClosure?
+  680|      0|    ) {
+  681|      0|        list(.mpimList, type:.group, excludeArchived: excludeArchived, excludeMembers: excludeMembers, success: {(channels) in
+  682|      0|            success?(channels)
+  683|      0|        }) {(error) in
+  684|      0|            failure?(error)
+  685|      0|        }
+  686|      0|    }
+  687|       |
+  688|      0|    public func markMPIM(channel: String, timestamp: String, success: ((_ ts: String) -> Void)?, failure: FailureClosure?) {
+  689|      0|        mark(.mpimMark, channel: channel, timestamp: timestamp, success: {(ts) in
+  690|      0|            success?(ts)
+  691|      0|        }) {(error) in
+  692|      0|            failure?(error)
+  693|      0|        }
+  694|      0|    }
+  695|       |
+  696|      0|    public func openMPIM(userIDs: [String], success: ((_ mpimID: String?) -> Void)?, failure: FailureClosure?) {
+  697|      0|        let parameters = ["token": token, "users": userIDs.joined(separator: ",")]
+  698|      0|        networkInterface.request(.mpimOpen, parameters: parameters, successClosure: {(response) in
+  699|      0|            let group = response["group"] as? [String: Any]
+  700|      0|            success?(group?["id"] as? String)
+  701|      0|        }) {(error) in
+  702|      0|            failure?(error)
+  703|      0|        }
+  704|      0|    }
+  705|       |}
+  706|       |
+  707|       |// MARK: - Pins
+  708|       |extension WebAPI {
+  709|       |    public func pinsList(
+  710|       |        channel: String,
+  711|       |        success: ItemsClosure?,
+  712|       |        failure: FailureClosure?
+  713|      0|    ) {
+  714|      0|        let parameters: [String: Any?] = [
+  715|      0|            "token": token,
+  716|      0|            "channel": channel
+  717|      0|        ]
+  718|      0|        networkInterface.request(.pinsList, parameters: parameters, successClosure: { response in
+  719|      0|            let items = response["items"] as? [[String: Any]]
+  720|      0|            success?(items?.map({ Item(item: $0) }))
+  721|      0|        }) {(error) in
+  722|      0|            failure?(error)
+  723|      0|        }
+  724|      0|    }
+  725|       |
+  726|       |    public func pinItem(
+  727|       |        channel: String,
+  728|       |        file: String? = nil,
+  729|       |        fileComment: String? = nil,
+  730|       |        timestamp: String? = nil,
+  731|       |        success: SuccessClosure?,
+  732|       |        failure: FailureClosure?
+  733|      0|    ) {
+  734|      0|        pin(.pinsAdd, channel: channel, file: file, fileComment: fileComment, timestamp: timestamp, success: {(ok) in
+  735|      0|            success?(ok)
+  736|      0|        }) {(error) in
+  737|      0|            failure?(error)
+  738|      0|        }
+  739|      0|    }
+  740|       |
+  741|       |    public func unpinItem(
+  742|       |        channel: String,
+  743|       |        file: String? = nil,
+  744|       |        fileComment: String? = nil,
+  745|       |        timestamp: String? = nil,
+  746|       |        success: SuccessClosure?,
+  747|       |        failure: FailureClosure?
+  748|      0|    ) {
+  749|      0|        pin(.pinsRemove, channel: channel, file: file, fileComment: fileComment, timestamp: timestamp, success: {(ok) in
+  750|      0|            success?(ok)
+  751|      0|        }) {(error) in
+  752|      0|            failure?(error)
+  753|      0|        }
+  754|      0|    }
+  755|       |
+  756|       |    private func pin(
+  757|       |        _ endpoint: Endpoint,
+  758|       |        channel: String,
+  759|       |        file: String? = nil,
+  760|       |        fileComment: String? = nil,
+  761|       |        timestamp: String? = nil,
+  762|       |        success: SuccessClosure?,
+  763|       |        failure: FailureClosure?
+  764|       |    ) {
+  765|       |        let parameters: [String: Any?] = [
+  766|       |            "token": token,
+  767|       |            "channel": channel,
+  768|       |            "file": file,
+  769|       |            "file_comment": fileComment,
+  770|       |            "timestamp": timestamp
+  771|       |        ]
+  772|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: { _ in
+  773|       |            success?(true)
+  774|       |        }) {(error) in
+  775|       |            failure?(error)
+  776|       |        }
+  777|       |    }
+  778|       |}
+  779|       |
+  780|       |// MARK: - Reactions
+  781|       |extension WebAPI {
+  782|      0|    public func addReactionToMessage(name: String, channel: String, timestamp: String, success: SuccessClosure?, failure: FailureClosure?) {
+  783|      0|        addReaction(name: name, channel: channel, timestamp: timestamp, success: success, failure: failure)
+  784|      0|    }
+  785|       |
+  786|      0|    public func addReactionToFile(name: String, file: String, success: SuccessClosure?, failure: FailureClosure?) {
+  787|      0|        addReaction(name: name, file: file, success: success, failure: failure)
+  788|      0|    }
+  789|       |
+  790|      0|    public func addReactionToFileComment(name: String, fileComment: String, success: SuccessClosure?, failure: FailureClosure?) {
+  791|      0|        addReaction(name: name, fileComment: fileComment, success: success, failure: failure)
+  792|      0|    }
+  793|       |
+  794|       |    private func addReaction(
+  795|       |        name: String,
+  796|       |        file: String? = nil,
+  797|       |        fileComment: String? = nil,
+  798|       |        channel: String? = nil,
+  799|       |        timestamp: String? = nil,
+  800|       |        success: SuccessClosure?,
+  801|       |        failure: FailureClosure?
+  802|       |    ) {
+  803|       |        react(.reactionsAdd, name: name, file: file, fileComment: fileComment, channel: channel, timestamp: timestamp, success: {(ok) in
+  804|       |            success?(ok)
+  805|       |        }) {(error) in
+  806|       |            failure?(error)
+  807|       |        }
+  808|       |    }
+  809|       |
+  810|       |    public func removeReactionFromMessage(
+  811|       |        name: String,
+  812|       |        channel: String,
+  813|       |        timestamp: String,
+  814|       |        success: SuccessClosure?,
+  815|       |        failure: FailureClosure?
+  816|      0|    ) {
+  817|      0|        removeReaction(name: name, channel: channel, timestamp: timestamp, success: success, failure: failure)
+  818|      0|    }
+  819|       |
+  820|      0|    public func removeReactionFromFile(name: String, file: String, success: SuccessClosure?, failure: FailureClosure?) {
+  821|      0|        removeReaction(name: name, file: file, success: success, failure: failure)
+  822|      0|    }
+  823|       |
+  824|      0|    public func removeReactionFromFileComment(name: String, fileComment: String, success: SuccessClosure?, failure: FailureClosure?) {
+  825|      0|        removeReaction(name: name, fileComment: fileComment, success: success, failure: failure)
+  826|      0|    }
+  827|       |
+  828|       |    private func removeReaction(
+  829|       |        name: String,
+  830|       |        file: String? = nil,
+  831|       |        fileComment: String? = nil,
+  832|       |        channel: String? = nil,
+  833|       |        timestamp: String? = nil,
+  834|       |        success: SuccessClosure?,
+  835|       |        failure: FailureClosure?
+  836|       |    ) {
+  837|       |        react(.reactionsRemove, name: name, file: file, fileComment: fileComment, channel: channel, timestamp: timestamp, success: {(ok) in
+  838|       |            success?(ok)
+  839|       |        }) {(error) in
+  840|       |            failure?(error)
+  841|       |        }
+  842|       |    }
+  843|       |
+  844|       |    private func react(
+  845|       |        _ endpoint: Endpoint,
+  846|       |        name: String,
+  847|       |        file: String? = nil,
+  848|       |        fileComment: String? = nil,
+  849|       |        channel: String? = nil,
+  850|       |        timestamp: String? = nil,
+  851|       |        success: SuccessClosure?,
+  852|       |        failure: FailureClosure?
+  853|       |    ) {
+  854|       |        let parameters: [String: Any?] = [
+  855|       |            "token": token,
+  856|       |            "name": name,
+  857|       |            "file": file,
+  858|       |            "file_comment": fileComment,
+  859|       |            "channel": channel,
+  860|       |            "timestamp": timestamp
+  861|       |        ]
+  862|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: { _ in
+  863|       |            success?(true)
+  864|       |        }) {(error) in
+  865|       |            failure?(error)
+  866|       |        }
+  867|       |    }
+  868|       |
+  869|       |    private enum ReactionItemType: String {
+  870|       |        case file, comment, message
+  871|       |    }
+  872|       |
+  873|      0|    public func getReactionsForFile(_ file: String, full: Bool = true, reactions: (([Reaction]) -> Void)?, failure: FailureClosure?) {
+  874|      0|        getReactionsForItem(file, full: full, type: .file, reactions: reactions, failure: failure)
+  875|      0|    }
+  876|       |
+  877|      0|    public func getReactionsForComment(_ comment: String, full: Bool = true, reactions: (([Reaction]) -> Void)?, failure: FailureClosure?) {
+  878|      0|        getReactionsForItem(comment: comment, full: full, type: .comment, reactions: reactions, failure: failure)
+  879|      0|    }
+  880|       |
+  881|       |    public func getReactionsForMessage(
+  882|       |        _ channel: String,
+  883|       |        timestamp: String,
+  884|       |        full: Bool = true,
+  885|       |        reactions: (([Reaction]) -> Void)?,
+  886|       |        failure: FailureClosure?
+  887|      0|    ) {
+  888|      0|        getReactionsForItem(channel: channel, timestamp: timestamp, full: full, type: .message, reactions: reactions, failure: failure)
+  889|      0|    }
+  890|       |
+  891|       |    private func getReactionsForItem(
+  892|       |        _ file: String? = nil,
+  893|       |        comment: String? = nil,
+  894|       |        channel: String? = nil,
+  895|       |        timestamp: String? = nil,
+  896|       |        full: Bool,
+  897|       |        type: ReactionItemType,
+  898|       |        reactions: (([Reaction]) -> Void)?,
+  899|       |        failure: FailureClosure?
+  900|       |    ) {
+  901|       |        let parameters: [String: Any?] = [
+  902|       |            "token": token,
+  903|       |            "file": file,
+  904|       |            "file_comment": comment,
+  905|       |            "channel": channel,
+  906|       |            "timestamp": timestamp,
+  907|       |            "full": full
+  908|       |        ]
+  909|      0|        networkInterface.request(.reactionsGet, parameters: parameters, successClosure: {(response) in
+  910|      0|            guard let item = response[type.rawValue] as? [String: Any] else {
+  911|      0|                reactions?([])
+  912|      0|                return
+  913|      0|            }
+  914|      0|            switch type {
+  915|      0|            case .message:
+  916|      0|                let message = Message(dictionary: item)
+  917|      0|                reactions?(message.reactions)
+  918|      0|            case .file:
+  919|      0|                let file = File(file: item)
+  920|      0|                reactions?(file.reactions)
+  921|      0|            case .comment:
+  922|      0|                let comment = Comment(comment: item)
+  923|      0|                reactions?(comment.reactions)
+  924|      0|            }
+  925|      0|        }) {(error) in
+  926|       |            failure?(error)
+  927|       |        }
+  928|       |    }
+  929|       |
+  930|       |    public func reactionsListForUser(
+  931|       |        _ user: String? = nil,
+  932|       |        full: Bool = true,
+  933|       |        count: Int = 100,
+  934|       |        page: Int = 1,
+  935|       |        success: ItemsClosure?,
+  936|       |        failure: FailureClosure?
+  937|      0|    ) {
+  938|      0|        let parameters: [String: Any?] = [
+  939|      0|            "token": token,
+  940|      0|            "user": user,
+  941|      0|            "full": full,
+  942|      0|            "count": count,
+  943|      0|            "page": page
+  944|      0|        ]
+  945|      0|        networkInterface.request(.reactionsList, parameters: parameters, successClosure: {(response) in
+  946|      0|            let items = response["items"] as? [[String: Any]]
+  947|      0|            success?(items?.map({ Item(item: $0) }))
+  948|      0|        }) {(error) in
+  949|      0|            failure?(error)
+  950|      0|        }
+  951|      0|    }
+  952|       |}
+  953|       |
+  954|       |// MARK: - Stars
+  955|       |extension WebAPI {
+  956|      0|    public func addStarToChannel(channel: String, success: SuccessClosure?, failure: FailureClosure?) {
+  957|      0|        addStar(channel: channel, success: success, failure: failure)
+  958|      0|    }
+  959|       |
+  960|      0|    public func addStarToMessage(channel: String, timestamp: String, success: SuccessClosure?, failure: FailureClosure?) {
+  961|      0|        addStar(channel: channel, timestamp: timestamp, success: success, failure: failure)
+  962|      0|    }
+  963|       |
+  964|      0|    public func addStarToFile(file: String, success: SuccessClosure?, failure: FailureClosure?) {
+  965|      0|        addStar(file: file, success: success, failure: failure)
+  966|      0|    }
+  967|       |
+  968|      0|    public func addStarToFileComment(fileComment: String, success: SuccessClosure?, failure: FailureClosure?) {
+  969|      0|        addStar(fileComment: fileComment, success: success, failure: failure)
+  970|      0|    }
+  971|       |
+  972|       |    private func addStar(
+  973|       |        file: String? = nil,
+  974|       |        fileComment: String? = nil,
+  975|       |        channel: String?  = nil,
+  976|       |        timestamp: String? = nil,
+  977|       |        success: SuccessClosure?,
+  978|       |        failure: FailureClosure?
+  979|       |    ) {
+  980|       |        star(.starsAdd, file: file, fileComment: fileComment, channel: channel, timestamp: timestamp, success: {(ok) in
+  981|       |            success?(ok)
+  982|       |        }) {(error) in
+  983|       |            failure?(error)
+  984|       |        }
+  985|       |    }
+  986|       |
+  987|      0|    public func removeStarFromChannel(channel: String, success: SuccessClosure?, failure: FailureClosure?) {
+  988|      0|        removeStar(channel: channel, success: success, failure: failure)
+  989|      0|    }
+  990|       |
+  991|      0|    public func removeStarFromMessage(channel: String, timestamp: String, success: SuccessClosure?, failure: FailureClosure?) {
+  992|      0|        removeStar(channel: channel, timestamp: timestamp, success: success, failure: failure)
+  993|      0|    }
+  994|       |
+  995|      0|    public func removeStarFromFile(file: String, success: SuccessClosure?, failure: FailureClosure?) {
+  996|      0|        removeStar(file: file, success: success, failure: failure)
+  997|      0|    }
+  998|       |
+  999|      0|    public func removeStarFromFilecomment(fileComment: String, success: SuccessClosure?, failure: FailureClosure?) {
+ 1000|      0|        removeStar(fileComment: fileComment, success: success, failure: failure)
+ 1001|      0|    }
+ 1002|       |
+ 1003|       |    private func removeStar(
+ 1004|       |        file: String? = nil,
+ 1005|       |        fileComment: String? = nil,
+ 1006|       |        channel: String? = nil,
+ 1007|       |        timestamp: String? = nil,
+ 1008|       |        success: SuccessClosure?,
+ 1009|       |        failure: FailureClosure?
+ 1010|       |    ) {
+ 1011|       |        star(.starsRemove, file: file, fileComment: fileComment, channel: channel, timestamp: timestamp, success: {(ok) in
+ 1012|       |            success?(ok)
+ 1013|       |        }) {(error) in
+ 1014|       |            failure?(error)
+ 1015|       |        }
+ 1016|       |    }
+ 1017|       |
+ 1018|       |    private func star(
+ 1019|       |        _ endpoint: Endpoint,
+ 1020|       |        file: String?,
+ 1021|       |        fileComment: String?,
+ 1022|       |        channel: String?,
+ 1023|       |        timestamp: String?,
+ 1024|       |        success: SuccessClosure?,
+ 1025|       |        failure: FailureClosure?
+ 1026|       |    ) {
+ 1027|       |        let parameters: [String: Any?] = [
+ 1028|       |            "token": token,
+ 1029|       |            "file": file,
+ 1030|       |            "file_comment": fileComment,
+ 1031|       |            "channel": channel,
+ 1032|       |            "timestamp": timestamp
+ 1033|       |        ]
+ 1034|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: { _ in
+ 1035|       |            success?(true)
+ 1036|       |        }) {(error) in
+ 1037|       |            failure?(error)
+ 1038|       |        }
+ 1039|       |    }
+ 1040|       |}
+ 1041|       |
+ 1042|       |// MARK: - Team
+ 1043|       |extension WebAPI {
+ 1044|      0|    public func teamInfo(success: ((_ info: [String: Any]?) -> Void)?, failure: FailureClosure?) {
+ 1045|      0|        networkInterface.request(.teamInfo, parameters: ["token": token], successClosure: {(response) in
+ 1046|      0|            success?(response["team"] as? [String: Any])
+ 1047|      0|        }) {(error) in
+ 1048|      0|            failure?(error)
+ 1049|      0|        }
+ 1050|      0|    }
+ 1051|       |}
+ 1052|       |
+ 1053|       |// MARK: - Users
+ 1054|       |extension WebAPI {
+ 1055|      0|    public func userPresence(user: String, success: ((_ presence: String?) -> Void)?, failure: FailureClosure?) {
+ 1056|      0|        let parameters: [String: Any] = ["token": token, "user": user]
+ 1057|      0|        networkInterface.request(.usersGetPresence, parameters: parameters, successClosure: {(response) in
+ 1058|      0|            success?(response["presence"] as? String)
+ 1059|      0|        }) {(error) in
+ 1060|      0|            failure?(error)
+ 1061|      0|        }
+ 1062|      0|    }
+ 1063|       |
+ 1064|      0|    public func userInfo(id: String, success: ((_ user: User) -> Void)?, failure: FailureClosure?) {
+ 1065|      0|        let parameters: [String: Any] = ["token": token, "user": id]
+ 1066|      0|        networkInterface.request(.usersInfo, parameters: parameters, successClosure: {(response) in
+ 1067|      0|            success?(User(user: response["user"] as? [String: Any]))
+ 1068|      0|        }) {(error) in
+ 1069|      0|            failure?(error)
+ 1070|      0|        }
+ 1071|      0|    }
+ 1072|       |
+ 1073|      0|    public func usersList(includePresence: Bool = false, success: ((_ userList: [[String: Any]]?) -> Void)?, failure: FailureClosure?) {
+ 1074|      0|        let parameters: [String: Any] = ["token": token, "presence": includePresence]
+ 1075|      0|        networkInterface.request(.usersList, parameters: parameters, successClosure: {(response) in
+ 1076|      0|            success?(response["members"] as? [[String: Any]])
+ 1077|      0|        }) {(error) in
+ 1078|      0|            failure?(error)
+ 1079|      0|        }
+ 1080|      0|    }
+ 1081|       |
+ 1082|      0|    public func setUserActive(success: SuccessClosure?, failure: FailureClosure?) {
+ 1083|      0|        networkInterface.request(.usersSetActive, parameters: ["token": token], successClosure: { _ in
+ 1084|      0|            success?(true)
+ 1085|      0|        }) {(error) in
+ 1086|      0|            failure?(error)
+ 1087|      0|        }
+ 1088|      0|    }
+ 1089|       |
+ 1090|      0|    public func setUserPresence(presence: Presence, success: SuccessClosure?, failure: FailureClosure?) {
+ 1091|      0|        let parameters: [String: Any] = ["token": token, "presence": presence.rawValue]
+ 1092|      0|        networkInterface.request(.usersSetPresence, parameters: parameters, successClosure: { _ in
+ 1093|      0|            success?(true)
+ 1094|      0|        }) {(error) in
+ 1095|      0|            failure?(error)
+ 1096|      0|        }
+ 1097|      0|    }
+ 1098|       |}
+ 1099|       |
+ 1100|       |// MARK: - Conversations
+ 1101|       |extension WebAPI {
+ 1102|       |    public func conversationsList(
+ 1103|       |        excludeArchived: Bool = false,
+ 1104|       |        cursor: String? = nil,
+ 1105|       |        limit: Int? = nil,
+ 1106|       |        types: [ConversationType]? = nil,
+ 1107|       |        success: ((_ channels: [[String: Any]]?, _ nextCursor: String?) -> Void)?,
+ 1108|       |        failure: FailureClosure?
+ 1109|      0|    ) {
+ 1110|      0|        var parameters: [String: Any] = ["token": token, "exclude_archived": excludeArchived]
+ 1111|      0|        if let cursor = cursor {
+ 1112|      0|            parameters["cursor"] = cursor
+ 1113|      0|        }
+ 1114|      0|        if let limit = limit {
+ 1115|      0|            parameters["limit"] = limit
+ 1116|      0|        }
+ 1117|      0|        if let types = types {
+ 1118|      0|            parameters["types"] = types.map({ $0.rawValue }).joined(separator: ",")
+ 1119|      0|        }
+ 1120|      0|        networkInterface.request(.conversationsList, parameters: parameters, successClosure: {(response) in
+ 1121|      0|            success?(response["channels"] as? [[String: Any]], (response["response_metadata"] as? [String: Any])?["next_cursor"] as? String)
+ 1122|      0|        }) {(error) in
+ 1123|      0|            failure?(error)
+ 1124|      0|        }
+ 1125|      0|    }
+ 1126|       |}
+ 1127|       |
+ 1128|       |// MARK: - Utilities
+ 1129|       |extension WebAPI {
+ 1130|       |    fileprivate func encodeAttachments(_ attachments: [Attachment?]?) -> String? {
+ 1131|       |        if let attachments = attachments {
+ 1132|       |            var attachmentArray: [[String: Any]] = []
+ 1133|       |            for attachment in attachments {
+ 1134|       |                if let attachment = attachment {
+ 1135|       |                    attachmentArray.append(attachment.dictionary)
+ 1136|       |                }
+ 1137|       |            }
+ 1138|       |            do {
+ 1139|       |                let data = try JSONSerialization.data(withJSONObject: attachmentArray, options: [])
+ 1140|       |                return String(data: data, encoding: String.Encoding.utf8)
+ 1141|       |            } catch let error {
+ 1142|       |                print(error)
+ 1143|       |            }
+ 1144|       |        }
+ 1145|       |        return nil
+ 1146|       |    }
+ 1147|       |
+ 1148|       |    fileprivate func enumerateDNDStatuses(_ statuses: [String: Any]) -> [String: DoNotDisturbStatus] {
+ 1149|       |        var retVal = [String: DoNotDisturbStatus]()
+ 1150|       |        for key in statuses.keys {
+ 1151|       |            retVal[key] = DoNotDisturbStatus(status: statuses[key] as? [String: Any])
+ 1152|       |        }
+ 1153|       |        return retVal
+ 1154|       |    }
+ 1155|       |
+ 1156|       |    fileprivate func close(_ endpoint: Endpoint, channelID: String, success: SuccessClosure?, failure: FailureClosure?) {
+ 1157|       |        let parameters: [String: Any] = ["token": token, "channel": channelID]
+ 1158|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: { _ in
+ 1159|       |            success?(true)
+ 1160|       |        }) {(error) in
+ 1161|       |            failure?(error)
+ 1162|       |        }
+ 1163|       |    }
+ 1164|       |
+ 1165|       |    fileprivate func history(
+ 1166|       |        _ endpoint: Endpoint,
+ 1167|       |        id: String,
+ 1168|       |        latest: String = "\(Date().timeIntervalSince1970)",
+ 1169|       |        oldest: String = "0",
+ 1170|       |        inclusive: Bool = false,
+ 1171|       |        count: Int = 100,
+ 1172|       |        unreads: Bool = false,
+ 1173|       |        success: HistoryClosure?,
+ 1174|       |        failure: FailureClosure?
+ 1175|       |    ) {
+ 1176|       |        let parameters: [String: Any] = [
+ 1177|       |            "token": token,
+ 1178|       |            "channel": id,
+ 1179|       |            "latest": latest,
+ 1180|       |            "oldest": oldest,
+ 1181|       |            "inclusive": inclusive,
+ 1182|       |            "count": count,
+ 1183|       |            "unreads": unreads
+ 1184|       |        ]
+ 1185|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: {(response) in
+ 1186|       |            success?(History(history: response))
+ 1187|       |        }) {(error) in
+ 1188|       |            failure?(error)
+ 1189|       |        }
+ 1190|       |    }
+ 1191|       |
+ 1192|       |    fileprivate func info(
+ 1193|       |        _ endpoint: Endpoint,
+ 1194|       |        type: ChannelType,
+ 1195|       |        id: String,
+ 1196|       |        success: ChannelClosure?,
+ 1197|       |        failure: FailureClosure?
+ 1198|       |    ) {
+ 1199|       |        let parameters: [String: Any] = ["token": token, "channel": id]
+ 1200|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: {(response) in
+ 1201|       |            success?(Channel(channel: response[type.rawValue] as? [String: Any]))
+ 1202|       |        }) {(error) in
+ 1203|       |            failure?(error)
+ 1204|       |        }
+ 1205|       |    }
+ 1206|       |
+ 1207|       |    fileprivate func list(
+ 1208|       |        _ endpoint: Endpoint,
+ 1209|       |        type: ChannelType,
+ 1210|       |        excludeArchived: Bool = false,
+ 1211|       |        excludeMembers: Bool = false,
+ 1212|       |        success: ((_ channels: [[String: Any]]?) -> Void)?,
+ 1213|       |        failure: FailureClosure?
+ 1214|       |    ) {
+ 1215|       |        let parameters: [String: Any] = ["token": token, "exclude_archived": excludeArchived, "exclude_members": excludeMembers]
+ 1216|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: {(response) in
+ 1217|       |            success?(response[type.rawValue+"s"] as? [[String: Any]])
+ 1218|       |        }) {(error) in
+ 1219|       |            failure?(error)
+ 1220|       |        }
+ 1221|       |    }
+ 1222|       |
+ 1223|       |    fileprivate func mark(
+ 1224|       |        _ endpoint: Endpoint,
+ 1225|       |        channel: String,
+ 1226|       |        timestamp: String,
+ 1227|       |        success: ((_ ts: String) -> Void)?,
+ 1228|       |        failure: FailureClosure?
+ 1229|       |    ) {
+ 1230|       |        let parameters: [String: Any] = ["token": token, "channel": channel, "ts": timestamp]
+ 1231|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: { _ in
+ 1232|       |            success?(timestamp)
+ 1233|       |        }) {(error) in
+ 1234|       |            failure?(error)
+ 1235|       |        }
+ 1236|       |    }
+ 1237|       |
+ 1238|       |    fileprivate func setInfo(
+ 1239|       |        _ endpoint: Endpoint,
+ 1240|       |        type: InfoType,
+ 1241|       |        channel: String,
+ 1242|       |        text: String,
+ 1243|       |        success: SuccessClosure?,
+ 1244|       |        failure: FailureClosure?
+ 1245|       |    ) {
+ 1246|       |        let parameters: [String: Any] = ["token": token, "channel": channel, type.rawValue: text]
+ 1247|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: { _ in
+ 1248|       |            success?(true)
+ 1249|       |        }) {(error) in
+ 1250|       |            failure?(error)
+ 1251|       |        }
+ 1252|       |    }
+ 1253|       |
+ 1254|       |    fileprivate func create(
+ 1255|       |        _ endpoint: Endpoint,
+ 1256|       |        name: String,
+ 1257|       |        success: ChannelClosure?,
+ 1258|       |        failure: FailureClosure?
+ 1259|       |    ) {
+ 1260|       |        let parameters: [String: Any] = ["token": token, "name": name]
+ 1261|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: {(response) in
+ 1262|       |            success?(Channel(channel: response["channel"] as? [String: Any]))
+ 1263|       |        }) {(error) in
+ 1264|       |            failure?(error)
+ 1265|       |        }
+ 1266|       |    }
+ 1267|       |
+ 1268|       |    fileprivate func invite(
+ 1269|       |        _ endpoint: Endpoint,
+ 1270|       |        channel: String,
+ 1271|       |        user: String,
+ 1272|       |        success: SuccessClosure?,
+ 1273|       |        failure: FailureClosure?
+ 1274|       |    ) {
+ 1275|       |        let parameters: [String: Any] = ["token": token, "channel": channel, "user": user]
+ 1276|       |        networkInterface.request(endpoint, parameters: parameters, successClosure: { _ in
+ 1277|       |            success?(true)
+ 1278|       |        }) {(error) in
+ 1279|       |            failure?(error)
+ 1280|       |        }
+ 1281|       |    }
+ 1282|       |}
+

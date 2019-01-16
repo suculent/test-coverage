@@ -1,0 +1,1893 @@
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Action.swift:
+    1|       |//
+    2|       |// Action.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Action {
+   25|       |    public let name: String?
+   26|       |    public let text: String?
+   27|       |    public let type: String?
+   28|       |    public let value: String?
+   29|       |    public let url: String?
+   30|       |    public let style: ActionStyle?
+   31|       |    public let confirm: Confirm?
+   32|       |    public let options: [Option]?
+   33|       |    public let dataSource: DataSource?
+   34|       |
+   35|      0|    public init(action: [String: Any]?) {
+   36|      0|        name = action?["name"] as? String
+   37|      0|        text = action?["text"] as? String
+   38|      0|        type = action?["type"] as? String
+   39|      0|        value = action?["value"] as? String
+   40|      0|        url = action?["url"] as? String
+   41|      0|        style = ActionStyle(rawValue: action?["style"] as? String ?? "")
+   42|      0|        confirm = Confirm(confirm:action?["confirm"] as? [String: Any])
+   43|      0|        options = (action?["options"] as? [[String: Any]])?.map { Option(option: $0) }
+   44|      0|        dataSource = DataSource(rawValue: action?["data_source"] as? String ?? "")
+   45|      0|    }
+   46|       |
+   47|       |    public init(name: String, text: String, type: String = "button", style: ActionStyle = .defaultStyle, value: String? = nil,
+   48|      0|                url: String? = nil, confirm: Confirm? = nil, options: [Option]? = nil, dataSource: DataSource? = nil) {
+   49|      0|        self.name = name
+   50|      0|        self.text = text
+   51|      0|        self.type = type
+   52|      0|        self.value = value
+   53|      0|        self.url = url
+   54|      0|        self.style = style
+   55|      0|        self.confirm = confirm
+   56|      0|        self.options = options
+   57|      0|        self.dataSource = dataSource
+   58|      0|    }
+   59|       |
+   60|      0|    public var dictionary: [String: Any] {
+   61|      0|        var dict = [String: Any]()
+   62|      0|        dict["name"] = name
+   63|      0|        dict["text"] = text
+   64|      0|        dict["type"] = type
+   65|      0|        dict["value"] = value
+   66|      0|        dict["url"] = url
+   67|      0|        dict["style"] = style?.rawValue
+   68|      0|        dict["confirm"] = confirm?.dictionary
+   69|      0|        dict["options"] = options?.map { $0.dictionary }
+   70|      0|        dict["data_source"] = dataSource?.rawValue
+   71|      0|        return dict
+   72|      0|    }
+   73|       |
+   74|       |    public struct Confirm {
+   75|       |        public let title: String?
+   76|       |        public let text: String?
+   77|       |        public let okText: String?
+   78|       |        public let dismissText: String?
+   79|       |
+   80|      0|        public init(confirm: [String: Any]?) {
+   81|      0|            title = confirm?["title"] as? String
+   82|      0|            text = confirm?["text"] as? String
+   83|      0|            okText = confirm?["ok_text"] as? String
+   84|      0|            dismissText = confirm?["dismiss_text"] as? String
+   85|      0|        }
+   86|       |
+   87|      0|        public init(text: String, title: String? = nil, okText: String? = nil, dismissText: String? = nil) {
+   88|      0|            self.text = text
+   89|      0|            self.title = title
+   90|      0|            self.okText = okText
+   91|      0|            self.dismissText = dismissText
+   92|      0|        }
+   93|       |
+   94|       |        public var dictionary: [String: Any] {
+   95|       |            var dict = [String: Any]()
+   96|       |            dict["title"] = title
+   97|       |            dict["text"] = text
+   98|       |            dict["ok_text"] = okText
+   99|       |            dict["dismiss_text"] = dismissText
+  100|       |            return dict
+  101|       |        }
+  102|       |    }
+  103|       |
+  104|       |    public struct Option {
+  105|       |        public let text: String?
+  106|       |        public let value: String?
+  107|       |
+  108|      0|        public init(option: [String: Any]?) {
+  109|      0|            text = option?["text"] as? String
+  110|      0|            value = option?["value"] as? String
+  111|      0|        }
+  112|       |
+  113|      0|        public init(text: String, value: String) {
+  114|      0|            self.text = text
+  115|      0|            self.value = value
+  116|      0|        }
+  117|       |
+  118|       |        public var dictionary: [String: Any] {
+  119|       |            var dict = [String: Any]()
+  120|       |            dict["text"] = text
+  121|       |            dict["value"] = value
+  122|       |            return dict
+  123|       |        }
+  124|       |    }
+  125|       |
+  126|       |    public enum DataSource: String {
+  127|       |        case users
+  128|       |        case channels
+  129|       |        case conversations
+  130|       |    }
+  131|       |}
+  132|       |
+  133|       |public enum ActionStyle: String {
+  134|       |    case defaultStyle = "default"
+  135|       |    case primary = "primary"
+  136|       |    case danger = "danger"
+  137|       |}
+  138|       |
+  139|       |public enum MessageResponseType: String {
+  140|       |    case inChannel = "in_channel"
+  141|       |    case ephemeral = "ephemeral"
+  142|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Attachment.swift:
+    1|       |//
+    2|       |// Attachment.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Attachment {
+   25|       |    public let fallback: String?
+   26|       |    public let callbackID: String?
+   27|       |    public let type: String?
+   28|       |    public let color: String?
+   29|       |    public let pretext: String?
+   30|       |    public let authorName: String?
+   31|       |    public let authorLink: String?
+   32|       |    public let authorIcon: String?
+   33|       |    public let title: String?
+   34|       |    public let titleLink: String?
+   35|       |    public let text: String?
+   36|       |    public let fields: [AttachmentField]?
+   37|       |    public let actions: [Action]?
+   38|       |    public let imageURL: String?
+   39|       |    public let thumbURL: String?
+   40|       |    public let footer: String?
+   41|       |    public let footerIcon: String?
+   42|       |    public let ts: Int?
+   43|       |    public let markdownEnabledFields: Set<AttachmentTextField>?
+   44|       |
+   45|      0|    public init(attachment: [String: Any]?) {
+   46|      0|        fallback = attachment?["fallback"] as? String
+   47|      0|        callbackID = attachment?["callback_id"] as? String
+   48|      0|        type = attachment?["attachment_type"] as? String
+   49|      0|        color = attachment?["color"] as? String
+   50|      0|        pretext = attachment?["pretext"] as? String
+   51|      0|        authorName = attachment?["author_name"] as? String
+   52|      0|        authorLink = attachment?["author_link"] as? String
+   53|      0|        authorIcon = attachment?["author_icon"] as? String
+   54|      0|        title = attachment?["title"] as? String
+   55|      0|        titleLink = attachment?["title_link"] as? String
+   56|      0|        text = attachment?["text"] as? String
+   57|      0|        imageURL = attachment?["image_url"] as? String
+   58|      0|        thumbURL = attachment?["thumb_url"] as? String
+   59|      0|        footer = attachment?["footer"] as? String
+   60|      0|        footerIcon = attachment?["footer_icon"] as? String
+   61|      0|        ts = attachment?["ts"] as? Int
+   62|      0|        fields = (attachment?["fields"] as? [[String: Any]])?.map { AttachmentField(field: $0) }
+   63|      0|        actions = (attachment?["actions"] as? [[String: Any]])?.map { Action(action: $0) }
+   64|      0|        markdownEnabledFields = (attachment?["mrkdwn_in"] as? [String]).map { Set($0.flatMap(AttachmentTextField.init)) }
+   65|      0|    }
+   66|       |
+   67|       |    public init(
+   68|       |        fallback: String,
+   69|       |        title: String?,
+   70|       |        callbackID: String? = nil,
+   71|       |        type: String? = nil,
+   72|       |        colorHex: String? = nil,
+   73|       |        pretext: String? = nil,
+   74|       |        authorName: String? = nil,
+   75|       |        authorLink: String? = nil,
+   76|       |        authorIcon: String? = nil,
+   77|       |        titleLink: String? = nil,
+   78|       |        text: String? = nil,
+   79|       |        fields: [AttachmentField]? = nil,
+   80|       |        actions: [Action]? = nil,
+   81|       |        imageURL: String? = nil,
+   82|       |        thumbURL: String? = nil,
+   83|       |        footer: String? = nil,
+   84|       |        footerIcon: String? = nil,
+   85|       |        ts: Int? = nil,
+   86|       |        markdownFields: Set<AttachmentTextField>? = nil
+   87|      0|    ) {
+   88|      0|        self.fallback = fallback
+   89|      0|        self.callbackID = callbackID
+   90|      0|        self.type = type
+   91|      0|        self.color = colorHex
+   92|      0|        self.pretext = pretext
+   93|      0|        self.authorName = authorName
+   94|      0|        self.authorLink = authorLink
+   95|      0|        self.authorIcon = authorIcon
+   96|      0|        self.title = title
+   97|      0|        self.titleLink = titleLink
+   98|      0|        self.text = text
+   99|      0|        self.fields = fields
+  100|      0|        self.actions = actions
+  101|      0|        self.imageURL = imageURL
+  102|      0|        self.thumbURL = thumbURL
+  103|      0|        self.footer = footer
+  104|      0|        self.footerIcon = footerIcon
+  105|      0|        self.ts = ts
+  106|      0|        self.markdownEnabledFields = markdownFields
+  107|      0|    }
+  108|       |
+  109|      0|    public var dictionary: [String: Any] {
+  110|      0|        var attachment = [String: Any]()
+  111|      0|        attachment["fallback"] = fallback
+  112|      0|        attachment["callback_id"] = callbackID
+  113|      0|        attachment["attachment_type"] = type
+  114|      0|        attachment["color"] = color
+  115|      0|        attachment["pretext"] = pretext
+  116|      0|        attachment["author_name"] = authorName
+  117|      0|        attachment["author_link"] = authorLink
+  118|      0|        attachment["author_icon"] = authorIcon
+  119|      0|        attachment["title"] = title
+  120|      0|        attachment["title_link"] = titleLink
+  121|      0|        attachment["text"] = text
+  122|      0|        attachment["fields"] = fields?.map { $0.dictionary }
+  123|      0|        attachment["actions"] = actions?.map { $0.dictionary }
+  124|      0|        attachment["image_url"] = imageURL
+  125|      0|        attachment["thumb_url"] = thumbURL
+  126|      0|        attachment["footer"] = footer
+  127|      0|        attachment["footer_icon"] = footerIcon
+  128|      0|        attachment["ts"] = ts
+  129|      0|        attachment["mrkdwn_in"] = markdownEnabledFields?.map { $0.rawValue }
+  130|      0|        return attachment
+  131|      0|    }
+  132|       |}
+  133|       |
+  134|       |public enum AttachmentColor: String {
+  135|       |    case good, warning, danger
+  136|       |}
+  137|       |
+  138|       |public enum AttachmentTextField: String {
+  139|       |    case fallback = "fallback"
+  140|       |    case pretext = "pretext"
+  141|       |    case authorName = "author_name"
+  142|       |    case title = "title"
+  143|       |    case text = "text"
+  144|       |    case fields = "fields"
+  145|       |    case footer = "footer"
+  146|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/AttachmentField.swift:
+    1|       |//
+    2|       |// AttachmentField.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct AttachmentField {
+   25|       |    public let title: String?
+   26|       |    public let value: String?
+   27|       |    public let short: Bool?
+   28|       |
+   29|      0|    public init(field: [String: Any]?) {
+   30|      0|        title = field?["title"] as? String
+   31|      0|        value = field?["value"] as? String
+   32|      0|        short = field?["short"] as? Bool
+   33|      0|    }
+   34|       |
+   35|      0|    public init(title: String?, value: String?, short: Bool? = nil) {
+   36|      0|        self.title = title
+   37|      0|        self.value = value
+   38|      0|        self.short = short
+   39|      0|    }
+   40|       |
+   41|      0|    public var dictionary: [String: Any] {
+   42|      0|        var field = [String: Any]()
+   43|      0|        field["title"] = title
+   44|      0|        field["value"] = value
+   45|      0|        field["short"] = short
+   46|      0|        return field
+   47|      0|    }
+   48|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Bot.swift:
+    1|       |//
+    2|       |// Bot.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Bot {
+   25|       |    public let id: String?
+   26|       |    public var botToken: String?
+   27|       |    public var name: String?
+   28|       |    public var icons: [String: Any]?
+   29|       |
+   30|    127|    public init(bot: [String: Any]?) {
+   31|    127|        id = bot?["id"] as? String
+   32|    127|        name = bot?["name"] as? String
+   33|    127|        icons = bot?["icons"] as? [String: Any]
+   34|    127|    }
+   35|       |
+   36|      0|    public init(botUser: [String: Any]?) {
+   37|      0|        id = botUser?["bot_user_id"] as? String
+   38|      0|        botToken = botUser?["bot_access_token"] as? String
+   39|      0|    }
+   40|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Channel.swift:
+    1|       |//
+    2|       |// Channel.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Channel {
+   25|       |    public let id: String?
+   26|       |    public let created: Int?
+   27|       |    public let creator: String?
+   28|       |    public var name: String?
+   29|       |    public var isArchived: Bool?
+   30|       |    public var isGeneral: Bool?
+   31|       |    public let isGroup: Bool?
+   32|       |    public let isIM: Bool?
+   33|       |    public let isMPIM: Bool?
+   34|       |    public var user: String?
+   35|       |    public var isUserDeleted: Bool?
+   36|       |    public var isOpen: Bool?
+   37|       |    public var topic: Topic?
+   38|       |    public var purpose: Topic?
+   39|       |    public var isMember: Bool?
+   40|       |    public var lastRead: String?
+   41|       |    public var latest: Message?
+   42|       |    public var unread: Int?
+   43|       |    public var unreadCountDisplay: Int?
+   44|       |    public var hasPins: Bool?
+   45|       |    public var members: [String]?
+   46|       |    // Client use
+   47|       |    public var pinnedItems = [Item]()
+   48|       |    public var usersTyping = [String]()
+   49|       |    public var messages = [String: Message]()
+   50|       |
+   51|    112|    public init(channel: [String: Any]?) {
+   52|    112|        id = channel?["id"] as? String
+   53|    112|        name = channel?["name"] as? String
+   54|    112|        created = channel?["created"] as? Int
+   55|    112|        creator = channel?["creator"] as? String
+   56|    112|        isArchived = channel?["is_archived"] as? Bool
+   57|    112|        isGeneral = channel?["is_general"] as? Bool
+   58|    112|        isGroup = channel?["is_group"] as? Bool
+   59|    112|        isIM = channel?["is_im"] as? Bool
+   60|    112|        isMPIM = channel?["is_mpim"] as? Bool
+   61|    112|        isUserDeleted = channel?["is_user_deleted"] as? Bool
+   62|    112|        user = channel?["user"] as? String
+   63|    112|        isOpen = channel?["is_open"] as? Bool
+   64|    112|        topic = Topic(topic: channel?["topic"] as? [String: Any])
+   65|    112|        purpose = Topic(topic: channel?["purpose"] as? [String: Any])
+   66|    112|        isMember = channel?["is_member"] as? Bool
+   67|    112|        lastRead = channel?["last_read"] as? String
+   68|    112|        unread = channel?["unread_count"] as? Int
+   69|    112|        unreadCountDisplay = channel?["unread_count_display"] as? Int
+   70|    112|        hasPins = channel?["has_pins"] as? Bool
+   71|    112|        members = channel?["members"] as? [String]
+   72|    112|
+   73|    112|        if let latestMesssageDictionary = channel?["latest"] as? [String: Any] {
+   74|      0|            latest = Message(dictionary: latestMesssageDictionary)
+   75|    112|        } else {
+   76|    112|            latest = Message(ts: channel?["latest"] as? String)
+   77|    112|        }
+   78|    112|    }
+   79|       |
+   80|      7|    public init(id: String?) {
+   81|      7|        self.id = id
+   82|      7|        created = nil
+   83|      7|        creator = nil
+   84|      7|        isGroup = false
+   85|      7|        isIM = false
+   86|      7|        isMPIM = false
+   87|      7|    }
+   88|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Comment.swift:
+    1|       |//
+    2|       |// Comment.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Comment: Equatable {
+   25|       |    public let id: String?
+   26|       |    public let user: String?
+   27|       |    public var created: Int?
+   28|       |    public var comment: String?
+   29|       |    public var starred: Bool?
+   30|       |    public var stars: Int?
+   31|       |    public var reactions = [Reaction]()
+   32|       |
+   33|     42|    public init(comment: [String: Any]?) {
+   34|     42|        self.comment = comment?["comment"] as? String
+   35|     42|        id = comment?["id"] as? String
+   36|     42|        created = comment?["created"] as? Int
+   37|     42|        user = comment?["user"] as? String
+   38|     42|        starred = comment?["is_starred"] as? Bool
+   39|     42|        stars = comment?["num_stars"] as? Int
+   40|     42|        reactions = Reaction.reactionsFromArray(comment?["reactions"] as? [[String: Any]])
+   41|     42|    }
+   42|       |
+   43|     14|    public init(id: String?) {
+   44|     14|        self.id = id
+   45|     14|        self.user = nil
+   46|     14|    }
+   47|       |
+   48|      0|    public static func == (lhs: Comment, rhs: Comment) -> Bool {
+   49|      0|        return lhs.id == rhs.id
+   50|      0|    }
+   51|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/CustomProfile.swift:
+    1|       |//
+    2|       |// CustomProfile.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct CustomProfile {
+   25|       |    public var fields = [String: CustomProfileField]()
+   26|       |
+   27|      7|    public init(profile: [String: Any]?) {
+   28|      7|        if let eventFields = profile?["fields"] as? [Any] {
+   29|      0|            for field in eventFields {
+   30|      0|                var cpf: CustomProfileField?
+   31|      0|                if let fieldDictionary = field as? [String: Any] {
+   32|      0|                    cpf = CustomProfileField(field: fieldDictionary)
+   33|      0|                } else {
+   34|      0|                    cpf = CustomProfileField(id: field as? String)
+   35|      0|                }
+   36|      0|                if let id = cpf?.id { fields[id] = cpf }
+   37|      0|            }
+   38|      7|        }
+   39|      7|    }
+   40|       |
+   41|     71|    public init(customFields: [String: Any]?) {
+   42|     71|        if let customFields = customFields {
+   43|      0|            for key in customFields.keys {
+   44|      0|                let cpf = CustomProfileField(field: customFields[key] as? [String: Any])
+   45|      0|                self.fields[key] = cpf
+   46|      0|            }
+   47|     71|        }
+   48|     71|    }
+   49|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/CustomProfileField.swift:
+    1|       |//
+    2|       |// CustomProfileField.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct CustomProfileField {
+   25|       |    public var id: String?
+   26|       |    public var alt: String?
+   27|       |    public var value: String?
+   28|       |    public var hidden: Bool?
+   29|       |    public var hint: String?
+   30|       |    public var label: String?
+   31|       |    public var options: String?
+   32|       |    public var ordering: Int?
+   33|       |    public var possibleValues: [String]?
+   34|       |    public var type: String?
+   35|       |
+   36|      0|    public init(field: [String: Any]?) {
+   37|      0|        id = field?["id"] as? String
+   38|      0|        alt = field?["alt"] as? String
+   39|      0|        value = field?["value"] as? String
+   40|      0|        hidden = field?["is_hidden"] as? Bool
+   41|      0|        hint = field?["hint"] as? String
+   42|      0|        label = field?["label"] as? String
+   43|      0|        options = field?["options"] as? String
+   44|      0|        ordering = field?["ordering"] as? Int
+   45|      0|        possibleValues = field?["possible_values"] as? [String]
+   46|      0|        type = field?["type"] as? String
+   47|      0|    }
+   48|       |
+   49|      0|    public init(id: String?) {
+   50|      0|        self.id = id
+   51|      0|    }
+   52|       |
+   53|      0|    public mutating func updateProfileField(_ profile: CustomProfileField?) {
+   54|      0|        id = profile?.id != nil ? profile?.id : id
+   55|      0|        alt = profile?.alt != nil ? profile?.alt : alt
+   56|      0|        value = profile?.value != nil ? profile?.value : value
+   57|      0|        hidden = profile?.hidden != nil ? profile?.hidden : hidden
+   58|      0|        hint = profile?.hint != nil ? profile?.hint : hint
+   59|      0|        label = profile?.label != nil ? profile?.label : label
+   60|      0|        options = profile?.options != nil ? profile?.options : options
+   61|      0|        ordering = profile?.ordering != nil ? profile?.ordering : ordering
+   62|      0|        possibleValues = profile?.possibleValues != nil ? profile?.possibleValues : possibleValues
+   63|      0|        type = profile?.type != nil ? profile?.type : type
+   64|      0|    }
+   65|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/DoNotDisturbStatus.swift:
+    1|       |//
+    2|       |// DoNotDisturbStatus.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct DoNotDisturbStatus {
+   25|       |    public var enabled: Bool?
+   26|       |    public var nextDoNotDisturbStart: Int?
+   27|       |    public var nextDoNotDisturbEnd: Int?
+   28|       |    public var snoozeEnabled: Bool?
+   29|       |    public var snoozeEndtime: Int?
+   30|       |
+   31|     16|    public init(status: [String: Any]?) {
+   32|     16|        enabled = status?["dnd_enabled"] as? Bool
+   33|     16|        nextDoNotDisturbStart = status?["next_dnd_start_ts"] as? Int
+   34|     16|        nextDoNotDisturbEnd = status?["next_dnd_end_ts"] as? Int
+   35|     16|        snoozeEnabled = status?["snooze_enabled"] as? Bool
+   36|     16|        snoozeEndtime = status?["snooze_endtime"] as? Int
+   37|     16|    }
+   38|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Edited.swift:
+    1|       |//
+    2|       |// Edited.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Edited {
+   25|       |    public let user: String?
+   26|       |    public let ts: String?
+   27|       |
+   28|      7|    public init(edited: [String: Any]?) {
+   29|      7|        user = edited?["user"] as? String
+   30|      7|        ts = edited?["ts"] as? String
+   31|      7|    }
+   32|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Event.swift:
+    1|       |//
+    2|       |// Event.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public enum EventType: String {
+   25|       |    case hello = "hello"
+   26|       |    case message = "message"
+   27|       |    case userTyping = "user_typing"
+   28|       |    case channelMarked = "channel_marked"
+   29|       |    case channelCreated = "channel_created"
+   30|       |    case channelJoined = "channel_joined"
+   31|       |    case channelLeft = "channel_left"
+   32|       |    case channelDeleted = "channel_deleted"
+   33|       |    case channelRenamed = "channel_rename"
+   34|       |    case channelArchive = "channel_archive"
+   35|       |    case channelUnarchive = "channel_unarchive"
+   36|       |    case channelHistoryChanged = "channel_history_changed"
+   37|       |    case dndUpdated = "dnd_updated"
+   38|       |    case dndUpatedUser = "dnd_updated_user"
+   39|       |    case imCreated = "im_created"
+   40|       |    case imOpen = "im_open"
+   41|       |    case imClose = "im_close"
+   42|       |    case imMarked = "im_marked"
+   43|       |    case imHistoryChanged = "im_history_changed"
+   44|       |    case groupJoined = "group_joined"
+   45|       |    case groupLeft = "group_left"
+   46|       |    case groupOpen = "group_open"
+   47|       |    case groupClose = "group_close"
+   48|       |    case groupArchive = "group_archive"
+   49|       |    case groupUnarchive = "group_unarchive"
+   50|       |    case groupRename = "group_rename"
+   51|       |    case groupMarked = "group_marked"
+   52|       |    case groupHistoryChanged = "group_history_changed"
+   53|       |    case fileCreated = "file_created"
+   54|       |    case fileShared = "file_shared"
+   55|       |    case fileUnshared = "file_unshared"
+   56|       |    case filePublic = "file_public"
+   57|       |    case filePrivate = "file_private"
+   58|       |    case fileChanged = "file_change"
+   59|       |    case fileDeleted = "file_deleted"
+   60|       |    case fileCommentAdded = "file_comment_added"
+   61|       |    case fileCommentEdited = "file_comment_edited"
+   62|       |    case fileCommentDeleted = "file_comment_deleted"
+   63|       |    case pinAdded = "pin_added"
+   64|       |    case pinRemoved = "pin_removed"
+   65|       |    case pong = "pong"
+   66|       |    case presenceChange = "presence_change"
+   67|       |    case manualPresenceChange = "manual_presence_change"
+   68|       |    case prefChange = "pref_change"
+   69|       |    case userChange = "user_change"
+   70|       |    case teamJoin = "team_join"
+   71|       |    case starAdded = "star_added"
+   72|       |    case starRemoved = "star_removed"
+   73|       |    case reactionAdded = "reaction_added"
+   74|       |    case reactionRemoved = "reaction_removed"
+   75|       |    case emojiChanged = "emoji_changed"
+   76|       |    case commandsChanged = "commands_changed"
+   77|       |    case teamPlanChange = "team_plan_change"
+   78|       |    case teamPrefChange = "team_pref_change"
+   79|       |    case teamRename = "team_rename"
+   80|       |    case teamDomainChange = "team_domain_change"
+   81|       |    case emailDomainChange = "email_domain_change"
+   82|       |    case teamProfileChange = "team_profile_change"
+   83|       |    case teamProfileDelete = "team_profile_delete"
+   84|       |    case teamProfileReorder = "team_profile_reorder"
+   85|       |    case botAdded = "bot_added"
+   86|       |    case botChanged = "bot_changed"
+   87|       |    case accountsChanged = "accounts_changed"
+   88|       |    case teamMigrationStarted = "team_migration_started"
+   89|       |    case reconnectURL = "reconnect_url"
+   90|       |    case subteamCreated = "subteam_created"
+   91|       |    case subteamUpdated = "subteam_updated"
+   92|       |    case subteamSelfAdded = "subteam_self_added"
+   93|       |    case subteamSelfRemoved = "subteam_self_removed"
+   94|       |    case ok = "ok"
+   95|       |    case error = "error"
+   96|       |    case goodbye = "goodbye"
+   97|       |    case unknown = "unknown"
+   98|       |}
+   99|       |
+  100|       |public enum MessageSubtype: String {
+  101|       |    case botMessage = "bot_message"
+  102|       |    case meMessage = "me_message"
+  103|       |    case messageChanged = "message_changed"
+  104|       |    case messageDeleted = "message_deleted"
+  105|       |    case channelJoin = "channel_join"
+  106|       |    case channelLeave = "channel_leave"
+  107|       |    case channelTopic = "channel_topic"
+  108|       |    case channelPurpose = "channel_purpose"
+  109|       |    case channelName = "channel_name"
+  110|       |    case channelArchive = "channel_archive"
+  111|       |    case channelUnarchive = "channel_unarchive"
+  112|       |    case groupJoin = "group_join"
+  113|       |    case groupLeave = "group_leave"
+  114|       |    case groupTopic = "group_topic"
+  115|       |    case groupPurpose = "group_purpose"
+  116|       |    case groupName = "group_name"
+  117|       |    case groupArchive = "group_archive"
+  118|       |    case groupUnarchive = "group_unarchive"
+  119|       |    case fileShare = "file_share"
+  120|       |    case fileComment = "file_comment"
+  121|       |    case fileMention = "file_mention"
+  122|       |    case messageReplied = "message_replied"
+  123|       |    case pinnedItem = "pinned_item"
+  124|       |    case replyBroadcast = "reply_broadcast"
+  125|       |    case unpinnedItem = "unpinned_item"
+  126|       |}
+  127|       |
+  128|       |public class Event {
+  129|       |    public let type: EventType?
+  130|       |    public let ts: String?
+  131|       |    public let subtype: String?
+  132|       |    public let channelID: String?
+  133|       |    public let text: String?
+  134|       |    public let eventTs: String?
+  135|       |    public let latest: String?
+  136|       |    public let hidden: Bool?
+  137|       |    public let isStarred: Bool?
+  138|       |    public let hasPins: Bool?
+  139|       |    public let pinnedTo: [String]?
+  140|       |    public let fileID: String?
+  141|       |    public let presence: String?
+  142|       |    public let name: String?
+  143|       |    public let value: Any?
+  144|       |    public let plan: String?
+  145|       |    public let url: String?
+  146|       |    public let domain: String?
+  147|       |    public let emailDomain: String?
+  148|       |    public let reaction: String?
+  149|       |    public let replyTo: Double?
+  150|       |    public let reactions: [[String: Any]]?
+  151|       |    public let edited: Edited?
+  152|       |    public let bot: Bot?
+  153|       |    public let channel: Channel?
+  154|       |    public let comment: Comment?
+  155|       |    public let user: User?
+  156|       |    public let file: File?
+  157|       |    public let message: Message?
+  158|       |    public let nestedMessage: Message?
+  159|       |    public let itemUser: String?
+  160|       |    public let item: Item?
+  161|       |    public let dndStatus: DoNotDisturbStatus?
+  162|       |    public let subteam: UserGroup?
+  163|       |    public let subteamID: String?
+  164|       |    public var profile: CustomProfile?
+  165|       |
+  166|       |    //swiftlint:disable function_body_length
+  167|      7|    public init(_ event: [String: Any]) {
+  168|      7|        type = EventType(rawValue: event["type"] as? String ?? "ok")
+  169|      7|        ts = event["ts"] as? String
+  170|      7|        subtype = event["subtype"] as? String
+  171|      7|        channelID = event["channel_id"] as? String
+  172|      7|        text = event["text"] as? String
+  173|      7|        eventTs = event["event_ts"] as? String
+  174|      7|        latest = event["latest"] as? String
+  175|      7|        hidden = event["hidden"] as? Bool
+  176|      7|        isStarred = event["is_starred"] as? Bool
+  177|      7|        hasPins = event["has_pins"] as? Bool
+  178|      7|        pinnedTo = event["pinned_top"] as? [String]
+  179|      7|        fileID = event["file_id"] as? String
+  180|      7|        presence = event["presence"] as? String
+  181|      7|        name = event["name"] as? String
+  182|      7|        value = event["value"]
+  183|      7|        plan = event["plan"] as? String
+  184|      7|        url = event["url"] as? String
+  185|      7|        domain = event["domain"] as? String
+  186|      7|        emailDomain = event["email_domain"] as? String
+  187|      7|        reaction = event["reaction"] as? String
+  188|      7|        replyTo = event["reply_to"] as? Double
+  189|      7|        reactions = event["reactions"] as? [[String: Any]]
+  190|      7|        bot = Bot(bot: event["bot"] as? [String: Any])
+  191|      7|        edited = Edited(edited:event["edited"] as? [String: Any])
+  192|      7|        dndStatus = DoNotDisturbStatus(status: event["dnd_status"] as? [String: Any])
+  193|      7|        itemUser = event["item_user"] as? String
+  194|      7|        item = Item(item: event["item"] as? [String: Any])
+  195|      7|        subteam = UserGroup(userGroup: event["subteam"] as? [String: Any])
+  196|      7|        subteamID = event["subteam_id"] as? String
+  197|      7|        message = Message(dictionary: event)
+  198|      7|        nestedMessage = Message(dictionary: event["message"] as? [String: Any])
+  199|      7|        profile = CustomProfile(profile: event["profile"] as? [String: Any])
+  200|      7|        file = File(id: event["file"] as? String)
+  201|      7|
+  202|      7|        // Comment, Channel, and User can come across as Strings or Dictionaries
+  203|      7|        if let commentDictionary = event["comment"] as? [String: Any] {
+  204|      0|            comment = Comment(comment: commentDictionary)
+  205|      7|        } else {
+  206|      7|            comment = Comment(id: event["comment"] as? String)
+  207|      7|        }
+  208|      7|
+  209|      7|        if let userDictionary = event["user"] as? [String: Any] {
+  210|      0|            user = User(user: userDictionary)
+  211|      7|        } else {
+  212|      7|            user = User(id: event["user"] as? String)
+  213|      7|        }
+  214|      7|
+  215|      7|        if let channelDictionary =  event["channel"] as? [String: Any] {
+  216|      0|            channel = Channel(channel: channelDictionary)
+  217|      7|        } else {
+  218|      7|            channel = Channel(id: event["channel"] as? String)
+  219|      7|        }
+  220|      7|    }
+  221|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Extensions.swift:
+    1|       |//
+    2|       |// Extensions.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import Foundation
+   25|       |
+   26|       |public extension Date {
+   27|      0|    var slackTimestamp: Double {
+   28|      0|        return NSNumber(value: timeIntervalSince1970).doubleValue
+   29|      0|    }
+   30|       |}
+   31|       |
+   32|       |public extension UInt64 {
+   33|     16|    static var nanosecondsPerSecond: UInt64 {
+   34|     16|        #if os(Linux)
+   35|     16|            return UInt64(CLOCKS_PER_SEC)
+   36|     16|        #else
+   37|     16|            return NSEC_PER_SEC
+   38|     16|        #endif
+   39|     16|    }
+   40|       |}
+   41|       |
+   42|     10|public func filterNilParameters(_ parameters: [String: Any?]) -> [String: Any] {
+   43|     10|    var finalParameters = [String: Any]()
+   44|     70|    for (key, value) in parameters {
+   45|     70|        if let unwrapped = value {
+   46|     70|            finalParameters[key] = unwrapped
+   47|     70|        }
+   48|     70|    }
+   49|     10|    return finalParameters
+   50|     10|}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/File.swift:
+    1|       |//
+    2|       |// File.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct File: Equatable {
+   25|       |    public let id: String?
+   26|       |    public let created: Int?
+   27|       |    public let name: String?
+   28|       |    public let title: String?
+   29|       |    public let mimeType: String?
+   30|       |    public let fileType: String?
+   31|       |    public let prettyType: String?
+   32|       |    public let user: String?
+   33|       |    public let mode: String?
+   34|       |    public var editable: Bool?
+   35|       |    public let isExternal: Bool?
+   36|       |    public let externalType: String?
+   37|       |    public let size: Int?
+   38|       |    public let urlPrivate: String?
+   39|       |    public let urlPrivateDownload: String?
+   40|       |    public let thumb64: String?
+   41|       |    public let thumb80: String?
+   42|       |    public let thumb360: String?
+   43|       |    public let thumb360gif: String?
+   44|       |    public let thumb360w: String?
+   45|       |    public let thumb360h: String?
+   46|       |    public let thumb480: String?
+   47|       |    public let thumb480gif: String?
+   48|       |    public let thumb480w: String?
+   49|       |    public let thumb480h: String?
+   50|       |    public let thumb720: String?
+   51|       |    public let thumb720gif: String?
+   52|       |    public let thumb720w: String?
+   53|       |    public let thumb720h: String?
+   54|       |    public let thumb960: String?
+   55|       |    public let thumb960gif: String?
+   56|       |    public let thumb960w: String?
+   57|       |    public let thumb960h: String?
+   58|       |    public let thumb1024: String?
+   59|       |    public let thumb1024gif: String?
+   60|       |    public let thumb1024w: String?
+   61|       |    public let thumb1024h: String?
+   62|       |    public let permalink: String?
+   63|       |    public let editLink: String?
+   64|       |    public let preview: String?
+   65|       |    public let previewHighlight: String?
+   66|       |    public let lines: Int?
+   67|       |    public let linesMore: Int?
+   68|       |    public var isPublic: Bool?
+   69|       |    public var publicSharedURL: Bool?
+   70|       |    public var channels: [String]?
+   71|       |    public var groups: [String]?
+   72|       |    public var ims: [String]?
+   73|       |    public let initialComment: Comment?
+   74|       |    public var stars: Int?
+   75|       |    public var isStarred: Bool?
+   76|       |    public var pinnedTo: [String]?
+   77|       |    public var comments = [String: Comment]()
+   78|       |    public var reactions = [Reaction]()
+   79|       |
+   80|       |    //swiftlint:disable function_body_length
+   81|     21|    public init(file: [String: Any]?) {
+   82|     21|        id = file?["id"] as? String
+   83|     21|        created = file?["created"] as? Int
+   84|     21|        name = file?["name"] as? String
+   85|     21|        title = file?["title"] as? String
+   86|     21|        mimeType = file?["mimetype"] as? String
+   87|     21|        fileType = file?["filetype"] as? String
+   88|     21|        prettyType = file?["pretty_type"] as? String
+   89|     21|        user = file?["user"] as? String
+   90|     21|        mode = file?["mode"] as? String
+   91|     21|        editable = file?["editable"] as? Bool
+   92|     21|        isExternal = file?["is_external"] as? Bool
+   93|     21|        externalType = file?["external_type"] as? String
+   94|     21|        size = file?["size"] as? Int
+   95|     21|        urlPrivate = file?["url_private"] as? String
+   96|     21|        urlPrivateDownload = file?["url_private_download"] as? String
+   97|     21|        thumb64 = file?["thumb_64"] as? String
+   98|     21|        thumb80 = file?["thumb_80"] as? String
+   99|     21|        thumb360 = file?["thumb_360"] as? String
+  100|     21|        thumb360gif = file?["thumb_360_gif"] as? String
+  101|     21|        thumb360w = file?["thumb_360_w"] as? String
+  102|     21|        thumb360h = file?["thumb_360_h"] as? String
+  103|     21|        thumb480 = file?["thumb_480"] as? String
+  104|     21|        thumb480gif = file?["thumb_480_gif"] as? String
+  105|     21|        thumb480w = file?["thumb_480_w"] as? String
+  106|     21|        thumb480h = file?["thumb_480_h"] as? String
+  107|     21|        thumb720 = file?["thumb_720"] as? String
+  108|     21|        thumb720gif = file?["thumb_720_gif"] as? String
+  109|     21|        thumb720w = file?["thumb_720_w"] as? String
+  110|     21|        thumb720h = file?["thumb_720_h"] as? String
+  111|     21|        thumb960 = file?["thumb_960"] as? String
+  112|     21|        thumb960gif = file?["thumb_960_gif"] as? String
+  113|     21|        thumb960w = file?["thumb_960_w"] as? String
+  114|     21|        thumb960h = file?["thumb_960_h"] as? String
+  115|     21|        thumb1024 = file?["thumb_1024"] as? String
+  116|     21|        thumb1024gif = file?["thumb_1024_gif"] as? String
+  117|     21|        thumb1024w = file?["thumb_1024_w"] as? String
+  118|     21|        thumb1024h = file?["thumb_1024_h"] as? String
+  119|     21|        permalink = file?["permalink"] as? String
+  120|     21|        editLink = file?["edit_link"] as? String
+  121|     21|        preview = file?["preview"] as? String
+  122|     21|        previewHighlight = file?["preview_highlight"] as? String
+  123|     21|        lines = file?["lines"] as? Int
+  124|     21|        linesMore = file?["lines_more"] as? Int
+  125|     21|        isPublic = file?["is_public"] as? Bool
+  126|     21|        publicSharedURL = file?["public_url_shared"] as? Bool
+  127|     21|        channels = file?["channels"] as? [String]
+  128|     21|        groups = file?["groups"] as? [String]
+  129|     21|        ims = file?["ims"] as? [String]
+  130|     21|        initialComment = Comment(comment: file?["initial_comment"] as? [String: Any])
+  131|     21|        stars = file?["num_stars"] as? Int
+  132|     21|        isStarred = file?["is_starred"] as? Bool
+  133|     21|        pinnedTo = file?["pinned_to"] as? [String]
+  134|     21|        reactions = Reaction.reactionsFromArray(file?["reactions"] as? [[String: Any]])
+  135|     21|    }
+  136|       |
+  137|     14|    public init(id: String?) {
+  138|     14|        self.id = id
+  139|     14|        created = nil
+  140|     14|        name = nil
+  141|     14|        title = nil
+  142|     14|        mimeType = nil
+  143|     14|        fileType = nil
+  144|     14|        prettyType = nil
+  145|     14|        user = nil
+  146|     14|        mode = nil
+  147|     14|        isExternal = nil
+  148|     14|        externalType = nil
+  149|     14|        size = nil
+  150|     14|        urlPrivate = nil
+  151|     14|        urlPrivateDownload = nil
+  152|     14|        thumb64 = nil
+  153|     14|        thumb80 = nil
+  154|     14|        thumb360 = nil
+  155|     14|        thumb360gif = nil
+  156|     14|        thumb360w = nil
+  157|     14|        thumb360h = nil
+  158|     14|        thumb480 = nil
+  159|     14|        thumb480gif = nil
+  160|     14|        thumb480w = nil
+  161|     14|        thumb480h = nil
+  162|     14|        thumb720 = nil
+  163|     14|        thumb720gif = nil
+  164|     14|        thumb720w = nil
+  165|     14|        thumb720h = nil
+  166|     14|        thumb960 = nil
+  167|     14|        thumb960gif = nil
+  168|     14|        thumb960w = nil
+  169|     14|        thumb960h = nil
+  170|     14|        thumb1024 = nil
+  171|     14|        thumb1024gif = nil
+  172|     14|        thumb1024w = nil
+  173|     14|        thumb1024h = nil
+  174|     14|        permalink = nil
+  175|     14|        editLink = nil
+  176|     14|        preview = nil
+  177|     14|        previewHighlight = nil
+  178|     14|        lines = nil
+  179|     14|        linesMore = nil
+  180|     14|        initialComment = nil
+  181|     14|    }
+  182|       |
+  183|      0|    public static func == (lhs: File, rhs: File) -> Bool {
+  184|      0|        return lhs.id == rhs.id
+  185|      0|    }
+  186|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/History.swift:
+    1|       |//
+    2|       |// History.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import Foundation
+   25|       |
+   26|       |public struct History {
+   27|       |    public var latest: Date?
+   28|       |    public var messages = [Message]()
+   29|       |    public let hasMore: Bool?
+   30|       |
+   31|      0|    public init(history: [String: Any]?) {
+   32|      0|        if let latestStr = history?["latest"] as? String, let latestDouble = Double(latestStr) {
+   33|      0|            latest = Date(timeIntervalSince1970: TimeInterval(latestDouble))
+   34|      0|        }
+   35|      0|        if let msgs = history?["messages"] as? [[String: Any]] {
+   36|      0|            for message in msgs {
+   37|      0|                messages.append(Message(dictionary: message))
+   38|      0|            }
+   39|      0|        }
+   40|      0|        hasMore = history?["has_more"] as? Bool
+   41|      0|    }
+   42|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Item.swift:
+    1|       |//
+    2|       |// Item.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Item: Equatable {
+   25|       |    public let type: String?
+   26|       |    public let ts: String?
+   27|       |    public let channel: String?
+   28|       |    public let message: Message?
+   29|       |    public let file: File?
+   30|       |    public let comment: Comment?
+   31|       |    public let fileCommentID: String?
+   32|       |
+   33|      7|    public init(item: [String: Any]?) {
+   34|      7|        type = item?["type"] as? String
+   35|      7|        ts = item?["ts"] as? String
+   36|      7|        channel = item?["channel"] as? String
+   37|      7|        message = Message(dictionary: item?["message"] as? [String: Any])
+   38|      7|
+   39|      7|        // Comment and File can come across as Strings or Dictionaries
+   40|      7|        if let commentDictionary = item?["comment"] as? [String: Any] {
+   41|      0|            comment = Comment(comment: commentDictionary)
+   42|      7|        } else {
+   43|      7|            comment = Comment(id: item?["comment"] as? String)
+   44|      7|        }
+   45|      7|
+   46|      7|        if let fileDictionary = item?["file"] as? [String: Any] {
+   47|      0|            file = File(file: fileDictionary)
+   48|      7|        } else {
+   49|      7|            file = File(id: item?["file"] as? String)
+   50|      7|        }
+   51|      7|
+   52|      7|        fileCommentID = item?["file_comment"] as? String
+   53|      7|    }
+   54|       |
+   55|      0|    public static func == (lhs: Item, rhs: Item) -> Bool {
+   56|      0|        return
+   57|      0|            lhs.type == rhs.type &&
+   58|      0|            lhs.channel == rhs.channel &&
+   59|      0|            lhs.file == rhs.file &&
+   60|      0|            lhs.comment == rhs.comment &&
+   61|      0|            lhs.message == rhs.message
+   62|      0|    }
+   63|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Message.swift:
+    1|       |//
+    2|       |// Message.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public final class Message: Equatable {
+   25|       |    public let type = "message"
+   26|       |    public let subtype: String?
+   27|       |    public var ts: String?
+   28|       |    public var threadTs: String?
+   29|       |    public let parentUserId: String?
+   30|       |    public var replyCount: Int?
+   31|       |    public var replies: [Reply]?
+   32|       |    public let user: String?
+   33|       |    public let channel: String?
+   34|       |    public var hidden: Bool?
+   35|       |    public var text: String?
+   36|       |    public let botID: String?
+   37|       |    public let username: String?
+   38|       |    public let icons: [String: Any]?
+   39|       |    public let deletedTs: String?
+   40|       |    public var purpose: String?
+   41|       |    public var topic: String?
+   42|       |    public var name: String?
+   43|       |    public var members: [String]?
+   44|       |    public var oldName: String?
+   45|       |    public let upload: Bool?
+   46|       |    public let itemType: String?
+   47|       |    public var isStarred: Bool?
+   48|       |    public var pinnedTo: [String]?
+   49|       |    public let comment: Comment?
+   50|       |    public let file: File?
+   51|       |    public var reactions = [Reaction]()
+   52|       |    public var attachments: [Attachment]?
+   53|       |    public var responseType: MessageResponseType?
+   54|       |    public var replaceOriginal: Bool?
+   55|       |    public var deleteOriginal: Bool?
+   56|       |
+   57|     21|    public init(dictionary: [String: Any]?) {
+   58|     21|        subtype = dictionary?["subtype"] as? String
+   59|     21|        ts = dictionary?["ts"] as? String
+   60|     21|        threadTs = dictionary?["thread_ts"] as? String
+   61|     21|        parentUserId = dictionary?["parent_user_id"] as? String
+   62|     21|        replyCount = dictionary?["reply_count"] as? Int
+   63|     21|        replies = (dictionary?["replies"] as? [[String: Any]])?.map({ Reply(reply: $0) })
+   64|     21|        user = dictionary?["user"] as? String
+   65|     21|        channel = dictionary?["channel"] as? String
+   66|     21|        hidden = dictionary?["hidden"] as? Bool
+   67|     21|        text = dictionary?["text"] as? String
+   68|     21|        botID = dictionary?["bot_id"] as? String
+   69|     21|        username = dictionary?["username"] as? String
+   70|     21|        icons = dictionary?["icons"] as? [String: Any]
+   71|     21|        deletedTs = dictionary?["deleted_ts"] as? String
+   72|     21|        purpose = dictionary?["purpose"] as? String
+   73|     21|        topic = dictionary?["topic"] as? String
+   74|     21|        name = dictionary?["name"] as? String
+   75|     21|        members = dictionary?["members"] as? [String]
+   76|     21|        oldName = dictionary?["old_name"] as? String
+   77|     21|        upload = dictionary?["upload"] as? Bool
+   78|     21|        itemType = dictionary?["item_type"] as? String
+   79|     21|        isStarred = dictionary?["is_starred"] as? Bool
+   80|     21|        pinnedTo = dictionary?["pinned_to"] as? [String]
+   81|     21|        comment = Comment(comment: dictionary?["comment"] as? [String: Any])
+   82|     21|        file = File(file: dictionary?["file"] as? [String: Any])
+   83|     21|        reactions = Reaction.reactionsFromArray(dictionary?["reactions"] as? [[String: Any]])
+   84|     21|        attachments = (dictionary?["attachments"] as? [[String: Any]])?.map { Attachment(attachment: $0) }
+   85|     21|        responseType = MessageResponseType(rawValue: dictionary?["response_type"] as? String ?? "")
+   86|     21|        replaceOriginal = dictionary?["replace_original"] as? Bool
+   87|     21|        deleteOriginal = dictionary?["delete_original"] as? Bool
+   88|     21|    }
+   89|       |
+   90|    112|    public init(ts: String?) {
+   91|    112|        self.ts = ts
+   92|    112|        threadTs = nil
+   93|    112|        parentUserId = nil
+   94|    112|        subtype = nil
+   95|    112|        user = nil
+   96|    112|        channel = nil
+   97|    112|        botID = nil
+   98|    112|        username = nil
+   99|    112|        icons = nil
+  100|    112|        deletedTs = nil
+  101|    112|        upload = nil
+  102|    112|        itemType = nil
+  103|    112|        comment = nil
+  104|    112|        file = nil
+  105|    112|    }
+  106|       |
+  107|      0|    public static func == (lhs: Message, rhs: Message) -> Bool {
+  108|      0|        return lhs.ts == rhs.ts && lhs.threadTs == rhs.threadTs && lhs.user == rhs.user && lhs.text == rhs.text
+  109|      0|    }
+  110|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/OAuthConfig.swift:
+    1|       |//
+    2|       |//  OAuthConfig.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import Foundation
+   25|       |
+   26|       |public struct OAuthConfig {
+   27|       |    public let clientID: String
+   28|       |    public let clientSecret: String
+   29|       |    public let state: String
+   30|       |    public let redirectURI: String?
+   31|       |
+   32|      0|    public init(clientID: String, clientSecret: String, state: String = "", redirectURI: String? = nil) {
+   33|      0|        self.clientID = clientID
+   34|      0|        self.clientSecret = clientSecret
+   35|      0|        self.state = state
+   36|      0|        self.redirectURI = redirectURI
+   37|      0|    }
+   38|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/RTMOptions.swift:
+    1|       |//
+    2|       |// RTMOptions.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import Foundation
+   25|       |
+   26|       |public struct RTMOptions {
+   27|       |    public let batchPresenceAware: Bool
+   28|       |    public let mpimAware: Bool
+   29|       |    public let noLatest: Bool
+   30|       |    public let noUnreads: Bool
+   31|       |    public let presenceSub: Bool
+   32|       |    public let simpleLatest: Bool
+   33|       |    public let pingInterval: TimeInterval
+   34|       |    public let timeout: TimeInterval
+   35|       |    public let reconnect: Bool
+   36|       |
+   37|       |    public init(
+   38|       |        batchPresenceAware: Bool = false,
+   39|       |        mpimAware: Bool = true,
+   40|       |        noLatest: Bool = false,
+   41|       |        noUnreads: Bool = false,
+   42|       |        presenceSub: Bool = false,
+   43|       |        simpleLatest: Bool = false,
+   44|       |        pingInterval: TimeInterval = 30,
+   45|       |        timeout: TimeInterval = 300,
+   46|       |        reconnect: Bool = true
+   47|     10|    ) {
+   48|     10|        self.batchPresenceAware = batchPresenceAware
+   49|     10|        self.mpimAware = mpimAware
+   50|     10|        self.noLatest = noLatest
+   51|     10|        self.noUnreads = noUnreads
+   52|     10|        self.presenceSub = presenceSub
+   53|     10|        self.simpleLatest = simpleLatest
+   54|     10|        self.pingInterval = pingInterval
+   55|     10|        self.timeout = timeout
+   56|     10|        self.reconnect = reconnect
+   57|     10|    }
+   58|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Reaction.swift:
+    1|       |//
+    2|       |// Reaction.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Reaction: Equatable {
+   25|       |    public let name: String?
+   26|       |    public var user: String?
+   27|       |
+   28|      0|    public init(reaction: [String: Any]?) {
+   29|      0|        name = reaction?["name"] as? String
+   30|      0|    }
+   31|       |
+   32|      0|    public init(name: String, user: String) {
+   33|      0|        self.name = name
+   34|      0|        self.user = user
+   35|      0|    }
+   36|       |
+   37|     84|    static func reactionsFromArray(_ array: [[String: Any]]?) -> [Reaction] {
+   38|     84|        var reactions = [Reaction]()
+   39|     84|        if let array = array {
+   40|      0|            for reaction in array {
+   41|      0|                if let users = reaction["users"] as? [String], let name = reaction["name"] as? String {
+   42|      0|                    for user in users {
+   43|      0|                        reactions.append(Reaction(name: name, user: user))
+   44|      0|                    }
+   45|      0|                }
+   46|      0|            }
+   47|     84|        }
+   48|     84|        return reactions
+   49|     84|    }
+   50|       |
+   51|      0|    public static func == (lhs: Reaction, rhs: Reaction) -> Bool {
+   52|      0|        return lhs.name == rhs.name
+   53|      0|    }
+   54|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Reply.swift:
+    1|       |//
+    2|       |// Reaction.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Reply {
+   25|       |    public let user: String?
+   26|       |    public let ts: String?
+   27|       |
+   28|      0|    public init(reply: [String: Any]?) {
+   29|      0|        user = reply?["user"] as? String
+   30|      0|        ts = reply?["ts"] as? String
+   31|      0|    }
+   32|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Team.swift:
+    1|       |//
+    2|       |// Team.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Team {
+   25|       |    public let id: String?
+   26|       |    public var name: String?
+   27|       |    public var domain: String?
+   28|       |    public var emailDomain: String?
+   29|       |    public var messageEditWindowMinutes: Int?
+   30|       |    public var overStorageLimit: Bool?
+   31|       |    public var prefs: [String: Any]?
+   32|       |    public var plan: String?
+   33|       |    public var icon: TeamIcon?
+   34|       |
+   35|      9|    public init(team: [String: Any]?) {
+   36|      9|        id = team?["id"] as? String
+   37|      9|        name = team?["name"] as? String
+   38|      9|        domain = team?["domain"] as? String
+   39|      9|        emailDomain = team?["email_domain"] as? String
+   40|      9|        messageEditWindowMinutes = team?["msg_edit_window_mins"] as? Int
+   41|      9|        overStorageLimit = team?["over_storage_limit"] as? Bool
+   42|      9|        prefs = team?["prefs"] as? [String: Any]
+   43|      9|        plan = team?["plan"] as? String
+   44|      9|        icon = TeamIcon(icon: team?["icon"] as? [String: Any])
+   45|      9|    }
+   46|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/TeamIcon.swift:
+    1|       |//
+    2|       |// TeamIcon.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct TeamIcon {
+   25|       |    public var image34: String?
+   26|       |    public var image44: String?
+   27|       |    public var image68: String?
+   28|       |    public var image88: String?
+   29|       |    public var image102: String?
+   30|       |    public var image132: String?
+   31|       |    public var imageOriginal: String?
+   32|       |    public var imageDefault: Bool?
+   33|       |
+   34|      9|    public init(icon: [String: Any]?) {
+   35|      9|        image34 = icon?["image_34"] as? String
+   36|      9|        image44 = icon?["image_44"] as? String
+   37|      9|        image68 = icon?["image_68"] as? String
+   38|      9|        image88 = icon?["image_88"] as? String
+   39|      9|        image102 = icon?["image_102"] as? String
+   40|      9|        image132 = icon?["image_132"] as? String
+   41|      9|        imageOriginal = icon?["image_original"] as? String
+   42|      9|        imageDefault = icon?["image_default"] as? Bool
+   43|      9|    }
+   44|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Topic.swift:
+    1|       |//
+    2|       |// Topic.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct Topic {
+   25|       |    public let value: String?
+   26|       |    public let creator: String?
+   27|       |    public let lastSet: Int?
+   28|       |
+   29|    224|    public init(topic: [String: Any]?) {
+   30|    224|        value = topic?["value"] as? String
+   31|    224|        creator = topic?["creator"] as? String
+   32|    224|        lastSet = topic?["last_set"] as? Int
+   33|    224|    }
+   34|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/User.swift:
+    1|       |//
+    2|       |// User.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct User {
+   25|       |    public struct Profile {
+   26|       |        public var firstName: String?
+   27|       |        public var lastName: String?
+   28|       |        public var realName: String?
+   29|       |        public var email: String?
+   30|       |        public var phone: String?
+   31|       |        public var image24: String?
+   32|       |        public var image32: String?
+   33|       |        public var image48: String?
+   34|       |        public var image72: String?
+   35|       |        public var image192: String?
+   36|       |        public var customProfile: CustomProfile?
+   37|       |
+   38|     72|        public init(profile: [String: Any]?) {
+   39|     72|            firstName = profile?["first_name"] as? String
+   40|     72|            lastName = profile?["last_name"] as? String
+   41|     72|            realName = profile?["real_name"] as? String
+   42|     72|            email = profile?["email"] as? String
+   43|     72|            phone = profile?["phone"] as? String
+   44|     72|            image24 = profile?["image_24"] as? String
+   45|     72|            image32 = profile?["image_32"] as? String
+   46|     72|            image48 = profile?["image_48"] as? String
+   47|     72|            image72 = profile?["image_72"] as? String
+   48|     72|            image192 = profile?["image_192"] as? String
+   49|     72|            customProfile = CustomProfile(customFields: profile?["fields"] as? [String: Any])
+   50|     72|        }
+   51|       |    }
+   52|       |
+   53|       |    public let id: String?
+   54|       |    public var name: String?
+   55|       |    public var deleted: Bool?
+   56|       |    public var profile: Profile?
+   57|       |    public var doNotDisturbStatus: DoNotDisturbStatus?
+   58|       |    public var presence: String?
+   59|       |    public var color: String?
+   60|       |    public let isBot: Bool?
+   61|       |    public var isAdmin: Bool?
+   62|       |    public var isOwner: Bool?
+   63|       |    public var isPrimaryOwner: Bool?
+   64|       |    public var isRestricted: Bool?
+   65|       |    public var isUltraRestricted: Bool?
+   66|       |    public var has2fa: Bool?
+   67|       |    public var hasFiles: Bool?
+   68|       |    public var status: String?
+   69|       |    public var timeZone: String?
+   70|       |    public var timeZoneLabel: String?
+   71|       |    public var timeZoneOffSet: Int?
+   72|       |    public var preferences: [String: Any]?
+   73|       |    // Client properties
+   74|       |    public var userGroups: [String: String]?
+   75|       |
+   76|     72|    public init(user: [String: Any]?) {
+   77|     72|        id = user?["id"] as? String
+   78|     72|        name = user?["name"] as? String
+   79|     72|        deleted = user?["deleted"] as? Bool
+   80|     72|        profile = Profile(profile: user?["profile"] as? [String: Any])
+   81|     72|        color = user?["color"] as? String
+   82|     72|        isAdmin = user?["is_admin"] as? Bool
+   83|     72|        isOwner = user?["is_owner"] as? Bool
+   84|     72|        isPrimaryOwner = user?["is_primary_owner"] as? Bool
+   85|     72|        isRestricted = user?["is_restricted"] as? Bool
+   86|     72|        isUltraRestricted = user?["is_ultra_restricted"] as? Bool
+   87|     72|        has2fa = user?["has_2fa"] as? Bool
+   88|     72|        hasFiles = user?["has_files"] as? Bool
+   89|     72|        isBot = user?["is_bot"] as? Bool
+   90|     72|        presence = user?["presence"] as? String
+   91|     72|        status = user?["status"] as? String
+   92|     72|        timeZone = user?["tz"] as? String
+   93|     72|        timeZoneLabel = user?["tz_label"] as? String
+   94|     72|        timeZoneOffSet = user?["tz_offset"] as? Int
+   95|     72|        preferences = user?["prefs"] as? [String: Any]
+   96|     72|    }
+   97|       |
+   98|      7|    public init(id: String?) {
+   99|      7|        self.id = id
+  100|      7|        self.isBot = nil
+  101|      7|    }
+  102|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/UserGroup.swift:
+    1|       |//
+    2|       |// UserGroup.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct UserGroup {
+   25|       |    public let id: String?
+   26|       |    public var teamID: String?
+   27|       |    public let isUserGroup: Bool?
+   28|       |    public var name: String?
+   29|       |    public var description: String?
+   30|       |    public var handle: String?
+   31|       |    public var isExternal: Bool?
+   32|       |    public let dateCreated: Int?
+   33|       |    public var dateUpdated: Int?
+   34|       |    public var dateDeleted: Int?
+   35|       |    public var autoType: String?
+   36|       |    public let createdBy: String?
+   37|       |    public var updatedBy: String?
+   38|       |    public var deletedBy: String?
+   39|       |    public var preferences: [String: Any]?
+   40|       |    public var users: [String]?
+   41|       |    public var userCount: Int?
+   42|       |
+   43|      7|    public init(userGroup: [String: Any]?) {
+   44|      7|        id = userGroup?["id"] as? String
+   45|      7|        teamID = userGroup?["team_id"] as? String
+   46|      7|        isUserGroup = userGroup?["is_usergroup"] as? Bool
+   47|      7|        name = userGroup?["name"] as? String
+   48|      7|        description = userGroup?["description"] as? String
+   49|      7|        handle = userGroup?["handle"] as? String
+   50|      7|        isExternal = userGroup?["is_external"] as? Bool
+   51|      7|        dateCreated = userGroup?["date_create"] as? Int
+   52|      7|        dateUpdated = userGroup?["date_update"] as? Int
+   53|      7|        dateDeleted = userGroup?["date_delete"] as? Int
+   54|      7|        autoType = userGroup?["auto_type"] as? String
+   55|      7|        createdBy = userGroup?["created_by"] as? String
+   56|      7|        updatedBy = userGroup?["updated_by"] as? String
+   57|      7|        deletedBy = userGroup?["deleted_by"] as? String
+   58|      7|        preferences = userGroup?["prefs"] as? [String: Any]
+   59|      7|        users = userGroup?["users"] as? [String]
+   60|      7|        if let count = userGroup?["user_count"] as? String {
+   61|      0|            userCount = Int(count)
+   62|      7|        }
+   63|      7|    }
+   64|       |}
+

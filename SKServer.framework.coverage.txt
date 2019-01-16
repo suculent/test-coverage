@@ -1,0 +1,1797 @@
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Conformers/SwifterServer.swift:
+    1|       |//
+    2|       |//  SwifterServer.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import Foundation
+   25|       |import Swifter
+   26|       |
+   27|       |class SwifterServer: SlackKitServer {
+   28|       |    
+   29|       |    let server = HttpServer()
+   30|       |    let port: in_port_t
+   31|       |    let forceIPV4: Bool
+   32|       |    
+   33|      0|    init(port: in_port_t = 8080, forceIPV4: Bool = false, responder: SlackKitResponder) {
+   34|      0|        self.port = port
+   35|      0|        self.forceIPV4 = forceIPV4
+   36|      0|        
+   37|      0|        for route in responder.routes {
+   38|      0|            server[route.path] = { request in
+   39|      0|                return route.middleware.respond(to: (request.request, Response())).1.httpResponse
+   40|      0|            }
+   41|      0|        }
+   42|      0|    }
+   43|       |    
+   44|      0|    public func start() {
+   45|      0|        do {
+   46|      0|            try server.start(port, forceIPv4: forceIPV4)
+   47|      0|        } catch let error {
+   48|      0|            print("Server failed to start with error: \(error)")
+   49|      0|        }
+   50|      0|    }
+   51|       |    
+   52|      0|    deinit {
+   53|      0|        server.stop()
+   54|      0|    }
+   55|       |}
+   56|       |    
+   57|       |extension HttpRequest {
+   58|       |    public var request: RequestType {
+   59|      0|        return Request(self.method, self.path, String(bytes: self.body, encoding: .utf8) ?? "", self.headers.map{($0.key, $0.value)})
+   60|       |    }
+   61|       |}
+   62|       |
+   63|       |extension ResponseType {
+   64|      0|    public var contentType: String? {
+   65|      0|        return self.headers.first(where: {$0.name.lowercased() == "content-type"})?.value
+   66|      0|    }
+   67|       |    
+   68|       |    public var httpResponse: HttpResponse {
+   69|       |        switch self.code {
+   70|       |        case 200 where contentType == nil:
+   71|       |            return .ok(.text(body))
+   72|       |        case 200 where contentType?.lowercased() == "application/json":
+   73|       |            guard let data = body.data(using: .utf8) else {
+   74|       |                return .badRequest(.text("Bad request."))
+   75|       |            }
+   76|       |            do {
+   77|       |                let json = try JSONSerialization.jsonObject(with: data, options: [])
+   78|       |                #if os(Linux)
+   79|       |                return .ok(.json(json as! AnyObject))
+   80|       |                #else
+   81|       |                return .ok(.json(json as AnyObject))
+   82|       |                #endif
+   83|       |            } catch let error {
+   84|       |                return .badRequest(.text(error.localizedDescription))
+   85|       |            }
+   86|       |        case 400:
+   87|       |            return .badRequest(.text("Bad request."))
+   88|       |        default:
+   89|       |            return .ok(.text("ok"))
+   90|       |        }
+   91|       |    }
+   92|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Middleware/MessageActionMiddleware.swift:
+    1|       |//
+    2|       |// MessageActionMiddleware.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct MessageActionMiddleware: Middleware {
+   25|       |    
+   26|       |    let token: String
+   27|       |    let routes: [MessageActionRoute]
+   28|       |    
+   29|      0|    public init(token: String, routes: [MessageActionRoute]) {
+   30|      0|        self.token = token
+   31|      0|        self.routes = routes
+   32|      0|    }
+   33|       |    
+   34|      0|    public func respond(to request: (RequestType, ResponseType)) -> (RequestType, ResponseType) {
+   35|      0|        if let form = request.0.formURLEncodedBody.first(where: {$0.name == "ssl_check"}), form.value == "1" {
+   36|      0|            return (request.0, Response(200))
+   37|      0|        }
+   38|      0|        guard
+   39|      0|            let actionRequest = MessageActionRequest(request: request.0),
+   40|      0|            let middleware = routes.first(where: {$0.action.name == actionRequest.action?.name})?.middleware,
+   41|      0|            actionRequest.token == token
+   42|      0|        else {
+   43|      0|            return (request.0, Response(400))
+   44|      0|        }
+   45|      0|        return middleware.respond(to: request)
+   46|      0|    }
+   47|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Middleware/OAuthMiddleware.swift:
+    1|       |//
+    2|       |// OAuthMiddleware.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import SKCore
+   25|       |import SKWebAPI
+   26|       |
+   27|       |public struct OAuthMiddleware: Middleware {
+   28|       |
+   29|       |    private let config: OAuthConfig
+   30|       |    internal(set) public var authed: ((OAuthResponse) -> Void)? = nil
+   31|       |    
+   32|      0|    public init(config: OAuthConfig, authed: ((OAuthResponse) -> Void)? = nil) {
+   33|      0|        self.config = config
+   34|      0|        self.authed = authed
+   35|      0|    }
+   36|       |    
+   37|      0|    public func respond(to request: (RequestType, ResponseType)) -> (RequestType, ResponseType) {
+   38|      0|        guard let response = AuthorizeResponse(queryItems: request.0.query), let code = response.code, response.state == config.state else {
+   39|      0|            return (request.0, Response(400))
+   40|      0|        }
+   41|      0|        let authResponse = WebAPI.oauthAccess(clientID: config.clientID, clientSecret: config.clientSecret, code: code, redirectURI: config.redirectURI)
+   42|      0|        self.authed?(OAuthResponse(response: authResponse))
+   43|      0|        guard let redirect = config.redirectURI else {
+   44|      0|            return (request.0, Response(200))
+   45|      0|        }
+   46|      0|        return (request.0, Response(code: 302, body: "", headers: [("location", redirect)]))
+   47|      0|    }
+   48|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Middleware/RedirectMiddleware.swift:
+    1|       |//
+    2|       |// RedirectMiddleware.swift
+    3|       |//
+    4|       |// Copyright (c) 2017 Quark
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in all
+   14|       |// copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   22|       |// SOFTWARE.
+   23|       |
+   24|       |public struct RedirectMiddleware: Middleware {
+   25|       |    
+   26|       |    let location: String
+   27|       |    let shouldRedirect: (RequestType) -> Bool
+   28|       |    
+   29|      0|    public init(redirectTo location: String, if shouldRedirect: @escaping (RequestType) -> Bool) {
+   30|      0|        self.location = location
+   31|      0|        self.shouldRedirect = shouldRedirect
+   32|      0|    }
+   33|       |    
+   34|      0|    public func respond(to request: (RequestType, ResponseType)) -> (RequestType, ResponseType) {
+   35|      0|        if shouldRedirect(request.0) {
+   36|      0|            return (request.0, Response(code: 302, body: "", headers: [("location", location)]))
+   37|      0|        }
+   38|      0|        return request
+   39|      0|    }
+   40|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Middleware/ResponseMiddleware.swift:
+    1|       |//
+    2|       |// ResponseMiddleware.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import Foundation
+   25|       |
+   26|       |public struct ResponseMiddleware: Middleware {
+   27|       |    
+   28|       |    let token: String
+   29|       |    let response: SKResponse
+   30|       |    
+   31|      0|    public init(token: String, response: SKResponse) {
+   32|      0|        self.token = token
+   33|      0|        self.response = response
+   34|      0|    }
+   35|       |    
+   36|      0|    public func respond(to request: (RequestType, ResponseType)) -> (RequestType, ResponseType) {
+   37|      0|        if let respondable = Respondable(request: request.0), respondable.token == token {
+   38|      0|            return (request.0, Response(response: response))
+   39|      0|        }
+   40|      0|        return (request.0, Response(400))
+   41|      0|    }
+   42|       |    
+   43|       |    private struct Respondable {
+   44|       |        
+   45|       |        let token: String
+   46|       |        
+   47|      0|        init?(request: RequestType) {
+   48|      0|            if let webhook = WebhookRequest(request: request), let token = webhook.token {
+   49|      0|                self.token = token
+   50|      0|            } else if let action = MessageActionRequest(request: request), let token = action.token {
+   51|      0|                self.token = token
+   52|      0|            } else {
+   53|      0|                return nil
+   54|      0|            }
+   55|      0|        }
+   56|       |    }
+   57|       |}
+   58|       |
+   59|       |extension WebhookRequest {
+   60|      0|    public init?(request: RequestType) {
+   61|      0|        guard
+   62|      0|            let proto = request.headers.first(where: {$0.name.lowercased() == "x-forwarded-proto"})?.value,
+   63|      0|            let host = request.headers.first(where: {$0.name.lowercased() == "host"})?.value
+   64|      0|        else {
+   65|      0|            return nil
+   66|      0|        }
+   67|      0|        let requestString = proto + host + request.path + "?" + request.body
+   68|      0|        let components = URLComponents(string: requestString)
+   69|      0|        var dict = [String: Any]()
+   70|      0|        _ = components?.queryItems.flatMap {$0.map({dict[$0.name]=$0.value})}
+   71|      0|        self.init(request: dict)
+   72|      0|    }
+   73|       |}
+   74|       |
+   75|       |extension MessageActionRequest {
+   76|      0|    public init?(request: RequestType) {
+   77|      0|        guard
+   78|      0|            let response = request.formURLEncodedBody.first(where: {$0.name.lowercased() == "payload" })?.value,
+   79|      0|            let data = response.data(using: .utf8),
+   80|      0|            let json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any]
+   81|      0|            else {
+   82|      0|                return nil
+   83|      0|        }
+   84|      0|        self.init(response: json)
+   85|      0|    }
+   86|       |}
+   87|       |
+   88|       |extension Response {
+   89|      0|    public init(response: SKResponse) {
+   90|      0|        if response.attachments == nil {
+   91|      0|            self.init(200, response.text)
+   92|      0|        } else if let data = try? JSONSerialization.data(withJSONObject: response.json, options: []), let body = String(data: data, encoding: .utf8) {
+   93|      0|            self.init(code: 200, body: body, headers: [("content-type","application/json")])
+   94|      0|        } else {
+   95|      0|            self.init(400)
+   96|      0|        }
+   97|      0|    }
+   98|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/AuthorizeResponse.swift:
+    1|       |//
+    2|       |// AuthorizeResponse.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct AuthorizeResponse {
+   25|       |    
+   26|       |    var code: String?
+   27|       |    var state: String?
+   28|       |    
+   29|      0|    init?(queryItems: [String: String]) {
+   30|      0|        for item in queryItems {
+   31|      0|            switch item.key {
+   32|      0|            case "code":
+   33|      0|                self.code = item.value
+   34|      0|            case "state":
+   35|      0|                self.state = item.value
+   36|      0|            default:
+   37|      0|                continue
+   38|      0|            }
+   39|      0|        }
+   40|      0|    }
+   41|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/IncomingWebhook.swift:
+    1|       |//
+    2|       |// IncomingWebhook.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct IncomingWebhook {
+   25|       |    
+   26|       |    public let url: String?
+   27|       |    public let channel: String?
+   28|       |    public let configurationURL: String?
+   29|       |    public let username: String?
+   30|       |    public let iconEmoji: String?
+   31|       |    public let iconURL: String?
+   32|       |    
+   33|      0|    internal init(webhook: [String: Any]?) {
+   34|      0|        url = webhook?["url"] as? String
+   35|      0|        channel = webhook?["channel"] as? String
+   36|      0|        configurationURL = webhook?["configuration_url"] as? String
+   37|      0|        username = webhook?["username"] as? String
+   38|      0|        iconEmoji = webhook?["icon_emoji"] as? String
+   39|      0|        iconURL = webhook?["icon_url"] as? String
+   40|      0|    }
+   41|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/MessageActionRequest.swift:
+    1|       |//
+    2|       |// MessageActionRequest.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import SKCore
+   25|       |
+   26|       |public struct MessageActionRequest {
+   27|       |    
+   28|       |    public let action: Action?
+   29|       |    public let callbackID: String?
+   30|       |    public let team: Team?
+   31|       |    public let channel: Channel?
+   32|       |    public let user: User?
+   33|       |    public let actionTS: String?
+   34|       |    public let messageTS: String?
+   35|       |    public let attachmentID: String?
+   36|       |    public let token: String?
+   37|       |    public let originalMessage: Message?
+   38|       |    public let responseURL: String?
+   39|       |    
+   40|      0|    internal init(response: [String: Any]?) {
+   41|      0|        action = (response?["actions"] as? [Any])?.map({$0 as? [String: Any]}).first.map({Action(action: $0)})
+   42|      0|        callbackID = response?["callback_id"] as? String
+   43|      0|        team = Team(team: response?["team"] as? [String: Any])
+   44|      0|        channel = Channel(channel: response?["channel"] as? [String: Any])
+   45|      0|        user = User(user: response?["channel"] as? [String: Any])
+   46|      0|        actionTS = response?["action_ts"] as? String
+   47|      0|        messageTS = response?["message_ts"] as? String
+   48|      0|        attachmentID = response?["attachment_id"] as? String
+   49|      0|        token = response?["token"] as? String
+   50|      0|        originalMessage = Message(dictionary: response?["original_message"] as? [String: Any])
+   51|      0|        responseURL = response?["response_url"] as? String
+   52|      0|    }
+   53|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/MessageActionRoute.swift:
+    1|       |//
+    2|       |// MessageActionRoute.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import SKCore
+   25|       |
+   26|       |public struct MessageActionRoute {
+   27|       |    
+   28|       |    let action: Action
+   29|       |    let middleware: Middleware
+   30|       |    
+   31|      0|    public init(action: Action, middleware: Middleware) {
+   32|      0|        self.action = action
+   33|      0|        self.middleware = middleware
+   34|      0|    }
+   35|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/OAuthResponse.swift:
+    1|       |//
+    2|       |// OAuthResponse.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import SKCore
+   25|       |
+   26|       |public struct OAuthResponse {
+   27|       |    
+   28|       |    public let accessToken: String?
+   29|       |    public let scope: [Scope]?
+   30|       |    public let userID: String?
+   31|       |    public let teamName: String?
+   32|       |    public let teamID: String?
+   33|       |    public let incomingWebhook: IncomingWebhook?
+   34|       |    public let bot: Bot?
+   35|       |    
+   36|      0|    internal init(response: [String: Any]?) {
+   37|      0|        accessToken = response?["access_token"] as? String
+   38|      0|        scope = (response?["scope"] as? String)?.components(separatedBy: ",").flatMap{Scope(rawValue: $0)}
+   39|      0|        userID = response?["user_id"] as? String
+   40|      0|        teamName = response?["team_name"] as? String
+   41|      0|        teamID = response?["team_id"] as? String
+   42|      0|        incomingWebhook = IncomingWebhook(webhook: response?["incoming_webhook"] as? [String: Any])
+   43|      0|        bot = Bot(botUser: response?["bot"] as? [String: Any])
+   44|      0|    }
+   45|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/RequestRoute.swift:
+    1|       |//
+    2|       |// RequestRoute.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct RequestRoute {
+   25|       |    
+   26|       |    let path: String
+   27|       |    let middleware: Middleware
+   28|       |    
+   29|      0|    public init(path: String, middleware: Middleware) {
+   30|      0|        self.path = path
+   31|      0|        self.middleware = middleware
+   32|      0|    }
+   33|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/SKResponse.swift:
+    1|       |//
+    2|       |// SKResponse.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |import Foundation
+   25|       |import SKCore
+   26|       |
+   27|       |public struct SKResponse {
+   28|       |    
+   29|       |    let text: String
+   30|       |    let responseType: MessageResponseType
+   31|       |    let attachments: [Attachment]?
+   32|       |    
+   33|      0|    public init(text: String, responseType: MessageResponseType = .inChannel, attachments: [Attachment]? = nil) {
+   34|      0|        self.responseType = responseType
+   35|      0|        self.text = text
+   36|      0|        self.attachments = attachments
+   37|      0|    }
+   38|       |    
+   39|      0|    internal var json: [String: Any] {
+   40|      0|        var json = [String : Any]()
+   41|      0|        json["text"] = text
+   42|      0|        json["response_type"] = responseType.rawValue
+   43|      0|        json["attachments"] = attachments?.map({$0.dictionary})
+   44|      0|        return json
+   45|      0|    }
+   46|       |    
+   47|      0|    internal var data: Data? {
+   48|      0|        return try? JSONSerialization.data(withJSONObject: self.json, options: [])
+   49|      0|    }
+   50|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Model/WebhookRequest.swift:
+    1|       |//
+    2|       |// WebhookRequest.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |public struct WebhookRequest {
+   25|       |    
+   26|       |    public let token: String?
+   27|       |    public let teamID: String?
+   28|       |    public let teamDomain: String?
+   29|       |    public let channelID: String?
+   30|       |    public let channelName: String?
+   31|       |    public let ts: String?
+   32|       |    public let userID: String?
+   33|       |    public let userName: String?
+   34|       |    public let command: String?
+   35|       |    public let text: String?
+   36|       |    public let triggerWord: String?
+   37|       |    public let responseURL: String?
+   38|       |    
+   39|      0|    internal init(request: [String: Any]?) {
+   40|      0|        token = request?["token"] as? String
+   41|      0|        teamID = request?["team_id"] as? String
+   42|      0|        teamDomain = request?["team_domain"] as? String
+   43|      0|        channelID = request?["channel_id"] as? String
+   44|      0|        channelName = request?["channel_name"] as? String
+   45|      0|        ts = request?["timestamp"] as? String
+   46|      0|        userID = request?["user_id"] as? String
+   47|      0|        userName = request?["user_name"] as? String
+   48|      0|        command = request?["command"] as? String
+   49|      0|        text = request?["text"] as? String
+   50|      0|        triggerWord = request?["trigger_word"] as? String
+   51|      0|        responseURL = request?["response_url"] as? String
+   52|      0|    }
+   53|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/SKServer.swift:
+    1|       |//
+    2|       |// SKServer.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |@_exported import SKCore
+   25|       |
+   26|       |public protocol SlackKitServer {
+   27|       |    func start()
+   28|       |}
+   29|       |
+   30|       |public protocol Middleware {
+   31|       |    func respond(to request: (RequestType, ResponseType)) -> (RequestType, ResponseType)
+   32|       |}
+   33|       |
+   34|       |public final class SKServer {
+   35|       |    
+   36|       |    internal let server: SlackKitServer
+   37|       |
+   38|      0|    public init?(server: SlackKitServer? = nil, responder: SlackKitResponder) {
+   39|      0|        if let server = server {
+   40|      0|            self.server = server
+   41|      0|        } else {
+   42|      0|            self.server = SwifterServer(responder: responder)
+   43|      0|        }
+   44|      0|    }
+   45|       |    
+   46|      0|    public convenience init?(server: SlackKitServer? = nil, responder: SlackKitResponder, oauth: OAuthConfig) {
+   47|      0|        var res = responder
+   48|      0|        res.routes.append(SKServer.oauthRequestRoute(config: oauth))
+   49|      0|        self.init(server: server, responder: res)
+   50|      0|    }
+   51|       |    
+   52|       |    private static func oauthRequestRoute(config: OAuthConfig) -> RequestRoute {
+   53|       |        let oauth = OAuthMiddleware(config: config)
+   54|       |        return RequestRoute(path: "/oauth", middleware: oauth)
+   55|       |    }
+   56|       |    
+   57|      0|    public func start() {
+   58|      0|        server.start()
+   59|      0|    }
+   60|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/SlackKitResponder.swift:
+    1|       |//
+    2|       |// SlackKitResponder.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |#if os(Linux)
+   25|       |import Dispatch
+   26|       |#endif
+   27|       |
+   28|       |public struct SlackKitResponder: Middleware {
+   29|       |    
+   30|       |    public var routes: [RequestRoute]
+   31|       |    
+   32|      0|    public init(routes: [RequestRoute]) {
+   33|      0|        self.routes = routes
+   34|      0|    }
+   35|       |    
+   36|      0|    public func respond(to request: (RequestType, ResponseType)) -> (RequestType, ResponseType) {
+   37|      0|        if let form = request.0.formURLEncodedBody.first(where: {$0.name == "ssl_check"}), form.value == "1" {
+   38|      0|            return (request.0, Response(200))
+   39|      0|        }
+   40|      0|        return routes.filter{$0.path == request.0.path}.first?.middleware.respond(to: (request.0, request.1)) ?? (request.0, Response(404))
+   41|      0|    }
+   42|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/Router/InitializerOverloads.swift:
+    1|       |//
+    2|       |// InitalizerOverloads.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//   
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//   
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//   
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |extension Request {
+   19|      0|  public init(_ method: String = "GET", _ path: String = "/", _ body: String = "", _ headers: [Header] = []) {
+   20|      0|    self.init(method: method, path: path, body: body, headers: headers)
+   21|      0|  }
+   22|       |}
+   23|       |
+   24|       |extension Response {
+   25|      0|  public init(_ code: Int = 200, _ body: String = "", _ headers: [Header] = []) {
+   26|      0|    self.init(code: code, body: body, headers: headers)
+   27|      0|  }
+   28|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/Router/PathParameterSupport.swift:
+    1|       |//
+    2|       |// PathParameterSupport.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|      0|func toFunction(_ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType), with pathTemplate: String) -> Function {
+   19|      0|  return { req, res in
+   20|      0|    let param = extractParameters(from: req.path, with: pathTemplate)
+   21|      0|    return handler(req, param[0], res)
+   22|      0|  }
+   23|      0|}
+   24|       |
+   25|      0|func toFunction(_ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType), with pathTemplate: String) -> Function {
+   26|      0|  return { req, res in
+   27|      0|    let param = extractParameters(from: req.path, with: pathTemplate)
+   28|      0|    return handler(req, param[0], param[1], res)
+   29|      0|  }
+   30|      0|}
+   31|       |
+   32|      0|func toFunction(_ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType), with pathTemplate: String) -> Function {
+   33|      0|  return { req, res in
+   34|      0|    let param = extractParameters(from: req.path, with: pathTemplate)
+   35|      0|    return handler(req, param[0], param[1], param[2], res)
+   36|      0|  }
+   37|      0|}
+   38|       |
+   39|      0|func toFunction(_ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType), with pathTemplate: String) -> Function {
+   40|      0|  return { req, res in
+   41|      0|    let param = extractParameters(from: req.path, with: pathTemplate)
+   42|      0|    return handler(req, param[0], param[1], param[2], param[3], res)
+   43|      0|  }
+   44|      0|}
+   45|       |
+   46|      0|func toFunction(_ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType), with pathTemplate: String) -> Function {
+   47|      0|  return { req, res in
+   48|      0|    let param = extractParameters(from: req.path, with: pathTemplate)
+   49|      0|    return handler(req, param[0], param[1], param[2], param[3], param[4], res)
+   50|      0|  }
+   51|      0|}
+   52|       |
+   53|       |/// Where the `path` is /users/567/email
+   54|       |/// Where the `template` is /users/*/email
+   55|       |/// return [567]
+   56|       |
+   57|       |func extractParameters(from path: String, with template: String) -> [String] {
+   58|       |  let pathComps = path.splitOnSlashes()
+   59|       |  let templateComps = template.splitOnSlashes()
+   60|       |  let z = zip(pathComps, templateComps)
+   61|       |  var ret: [String] = []
+   62|       |  for (pathComp, templateComp) in z {
+   63|       |    guard templateComp == "*" else {
+   64|       |      continue
+   65|       |    }
+   66|       |    ret.append(pathComp)
+   67|       |  }
+   68|       |  return ret
+   69|       |}
+   70|       |
+   71|       |extension String {
+   72|      0|  var wildcards: Int {
+   73|      0|    return self.characters.reduce(0) { (count, char) in
+   74|      0|      if char == "*" {
+   75|      0|        return count + 1
+   76|      0|      } else {
+   77|      0|        return count
+   78|      0|      }
+   79|      0|    }
+   80|      0|  }
+   81|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/Router/TitanInstanceMethodsNoLabels.generated.swift:
+    1|       |//
+    2|       |// TitanInstanceMethodsNoLabels.generated.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |// Routing methods for Titan overloaded with no labels
+   19|       |extension Titan {
+   20|       |
+   21|      0|  public func get(_ path: String, _ handler: @escaping Function) {
+   22|      0|    self.get(path: path, handler: handler)
+   23|      0|  }
+   24|       |
+   25|      0|  public func post(_ path: String, _ handler: @escaping Function) {
+   26|      0|    self.post(path: path, handler: handler)
+   27|      0|  }
+   28|       |
+   29|      0|  public func put(_ path: String, _ handler: @escaping Function) {
+   30|      0|    self.put(path: path, handler: handler)
+   31|      0|  }
+   32|       |
+   33|      0|  public func patch(_ path: String, _ handler: @escaping Function) {
+   34|      0|    self.patch(path: path, handler: handler)
+   35|      0|  }
+   36|       |
+   37|      0|  public func delete(_ path: String, _ handler: @escaping Function) {
+   38|      0|    self.delete(path: path, handler: handler)
+   39|      0|  }
+   40|       |
+   41|      0|  public func options(_ path: String, _ handler: @escaping Function) {
+   42|      0|    self.options(path: path, handler: handler)
+   43|      0|  }
+   44|       |
+   45|      0|  public func head(_ path: String, _ handler: @escaping Function) {
+   46|      0|    self.head(path: path, handler: handler)
+   47|      0|  }
+   48|       |
+   49|      0|  public func get(_ path: String, _ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+   50|      0|    self.get(path: path, handler: handler)
+   51|      0|  }
+   52|       |
+   53|      0|  public func get(_ path: String, _ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   54|      0|    self.get(path: path, handler: handler)
+   55|      0|  }
+   56|       |
+   57|      0|  public func get(_ path: String, _ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   58|      0|    self.get(path: path, handler: handler)
+   59|      0|  }
+   60|       |
+   61|      0|  public func get(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   62|      0|    self.get(path: path, handler: handler)
+   63|      0|  }
+   64|       |
+   65|      0|  public func get(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   66|      0|    self.get(path: path, handler: handler)
+   67|      0|  }
+   68|       |
+   69|      0|  public func post(_ path: String, _ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+   70|      0|    self.post(path: path, handler: handler)
+   71|      0|  }
+   72|       |
+   73|      0|  public func post(_ path: String, _ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   74|      0|    self.post(path: path, handler: handler)
+   75|      0|  }
+   76|       |
+   77|      0|  public func post(_ path: String, _ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   78|      0|    self.post(path: path, handler: handler)
+   79|      0|  }
+   80|       |
+   81|      0|  public func post(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   82|      0|    self.post(path: path, handler: handler)
+   83|      0|  }
+   84|       |
+   85|      0|  public func post(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   86|      0|    self.post(path: path, handler: handler)
+   87|      0|  }
+   88|       |
+   89|      0|  public func put(_ path: String, _ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+   90|      0|    self.put(path: path, handler: handler)
+   91|      0|  }
+   92|       |
+   93|      0|  public func put(_ path: String, _ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   94|      0|    self.put(path: path, handler: handler)
+   95|      0|  }
+   96|       |
+   97|      0|  public func put(_ path: String, _ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   98|      0|    self.put(path: path, handler: handler)
+   99|      0|  }
+  100|       |
+  101|      0|  public func put(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  102|      0|    self.put(path: path, handler: handler)
+  103|      0|  }
+  104|       |
+  105|      0|  public func put(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  106|      0|    self.put(path: path, handler: handler)
+  107|      0|  }
+  108|       |
+  109|      0|  public func patch(_ path: String, _ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+  110|      0|    self.patch(path: path, handler: handler)
+  111|      0|  }
+  112|       |
+  113|      0|  public func patch(_ path: String, _ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  114|      0|    self.patch(path: path, handler: handler)
+  115|      0|  }
+  116|       |
+  117|      0|  public func patch(_ path: String, _ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  118|      0|    self.patch(path: path, handler: handler)
+  119|      0|  }
+  120|       |
+  121|      0|  public func patch(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  122|      0|    self.patch(path: path, handler: handler)
+  123|      0|  }
+  124|       |
+  125|      0|  public func patch(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  126|      0|    self.patch(path: path, handler: handler)
+  127|      0|  }
+  128|       |
+  129|      0|  public func delete(_ path: String, _ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+  130|      0|    self.delete(path: path, handler: handler)
+  131|      0|  }
+  132|       |
+  133|      0|  public func delete(_ path: String, _ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  134|      0|    self.delete(path: path, handler: handler)
+  135|      0|  }
+  136|       |
+  137|      0|  public func delete(_ path: String, _ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  138|      0|    self.delete(path: path, handler: handler)
+  139|      0|  }
+  140|       |
+  141|      0|  public func delete(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  142|      0|    self.delete(path: path, handler: handler)
+  143|      0|  }
+  144|       |
+  145|      0|  public func delete(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  146|      0|    self.delete(path: path, handler: handler)
+  147|      0|  }
+  148|       |
+  149|      0|  public func options(_ path: String, _ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+  150|      0|    self.options(path: path, handler: handler)
+  151|      0|  }
+  152|       |
+  153|      0|  public func options(_ path: String, _ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  154|      0|    self.options(path: path, handler: handler)
+  155|      0|  }
+  156|       |
+  157|      0|  public func options(_ path: String, _ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  158|      0|    self.options(path: path, handler: handler)
+  159|      0|  }
+  160|       |
+  161|      0|  public func options(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  162|      0|    self.options(path: path, handler: handler)
+  163|      0|  }
+  164|       |
+  165|      0|  public func options(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  166|      0|    self.options(path: path, handler: handler)
+  167|      0|  }
+  168|       |
+  169|      0|  public func head(_ path: String, _ handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+  170|      0|    self.head(path: path, handler: handler)
+  171|      0|  }
+  172|       |
+  173|      0|  public func head(_ path: String, _ handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  174|      0|    self.head(path: path, handler: handler)
+  175|      0|  }
+  176|       |
+  177|      0|  public func head(_ path: String, _ handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  178|      0|    self.head(path: path, handler: handler)
+  179|      0|  }
+  180|       |
+  181|      0|  public func head(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  182|      0|    self.head(path: path, handler: handler)
+  183|      0|  }
+  184|       |
+  185|      0|  public func head(_ path: String, _ handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  186|      0|    self.head(path: path, handler: handler)
+  187|      0|  }
+  188|       |
+  189|      0|  public func route(_ method: String?, _ path: String, _ handler: @escaping Function) {
+  190|      0|    self.route(method: method, path: path, handler: handler)
+  191|      0|  }
+  192|       |
+  193|      0|  public func addFunction(_ path: String, _ handler: @escaping Function) {
+  194|      0|    self.addFunction(path: path, handler: handler)
+  195|      0|  }
+  196|       |
+  197|      0|  public func allMethods(_ path: String, _ handler: @escaping Function) {
+  198|      0|    self.allMethods(path: path, handler: handler)
+  199|      0|  }
+  200|       |
+  201|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/Router/TitanInstanceRoutesByMethod.generated.swift:
+    1|       |//
+    2|       |// TitanInstanceRoutesByMethod.generated.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |// Core routing methods for Titan, matching HTTP methods
+   19|       |extension Titan {
+   20|       |
+   21|      0|  public func get(path: String, handler: @escaping Function) {
+   22|      0|    route(method: "GET", path: path, handler: handler)
+   23|      0|  }
+   24|       |
+   25|      0|  public func post(path: String, handler: @escaping Function) {
+   26|      0|    route(method: "POST", path: path, handler: handler)
+   27|      0|  }
+   28|       |
+   29|      0|  public func put(path: String, handler: @escaping Function) {
+   30|      0|    route(method: "PUT", path: path, handler: handler)
+   31|      0|  }
+   32|       |
+   33|      0|  public func patch(path: String, handler: @escaping Function) {
+   34|      0|    route(method: "PATCH", path: path, handler: handler)
+   35|      0|  }
+   36|       |
+   37|      0|  public func delete(path: String, handler: @escaping Function) {
+   38|      0|    route(method: "DELETE", path: path, handler: handler)
+   39|      0|  }
+   40|       |
+   41|      0|  public func options(path: String, handler: @escaping Function) {
+   42|      0|    route(method: "OPTIONS", path: path, handler: handler)
+   43|      0|  }
+   44|       |
+   45|      0|  public func head(path: String, handler: @escaping Function) {
+   46|      0|    route(method: "HEAD", path: path, handler: handler)
+   47|      0|  }
+   48|       |
+   49|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/Router/TitanParameterizedRoutes.generated.swift:
+    1|       |//
+    2|       |// TitanParameterizedRoutes.generated.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |// Extend all route methods to access path components directly
+   19|       |
+   20|       |extension Titan {
+   21|       |
+   22|      0|  public func get(path: String, handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+   23|      0|    precondition(path.wildcards == 1)
+   24|      0|    self.get(path: path, handler: toFunction(handler, with: path))
+   25|      0|  }
+   26|      0|  public func get(path: String, handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   27|      0|    precondition(path.wildcards == 2)
+   28|      0|    self.get(path: path, handler: toFunction(handler, with: path))
+   29|      0|  }
+   30|      0|  public func get(path: String, handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   31|      0|    precondition(path.wildcards == 3)
+   32|      0|    self.get(path: path, handler: toFunction(handler, with: path))
+   33|      0|  }
+   34|      0|  public func get(path: String, handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   35|      0|    precondition(path.wildcards == 4)
+   36|      0|    self.get(path: path, handler: toFunction(handler, with: path))
+   37|      0|  }
+   38|      0|  public func get(path: String, handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   39|      0|    precondition(path.wildcards == 5)
+   40|      0|    self.get(path: path, handler: toFunction(handler, with: path))
+   41|      0|  }
+   42|       |
+   43|      0|  public func post(path: String, handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+   44|      0|    precondition(path.wildcards == 1)
+   45|      0|    self.post(path: path, handler: toFunction(handler, with: path))
+   46|      0|  }
+   47|      0|  public func post(path: String, handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   48|      0|    precondition(path.wildcards == 2)
+   49|      0|    self.post(path: path, handler: toFunction(handler, with: path))
+   50|      0|  }
+   51|      0|  public func post(path: String, handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   52|      0|    precondition(path.wildcards == 3)
+   53|      0|    self.post(path: path, handler: toFunction(handler, with: path))
+   54|      0|  }
+   55|      0|  public func post(path: String, handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   56|      0|    precondition(path.wildcards == 4)
+   57|      0|    self.post(path: path, handler: toFunction(handler, with: path))
+   58|      0|  }
+   59|      0|  public func post(path: String, handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   60|      0|    precondition(path.wildcards == 5)
+   61|      0|    self.post(path: path, handler: toFunction(handler, with: path))
+   62|      0|  }
+   63|       |
+   64|      0|  public func put(path: String, handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+   65|      0|    precondition(path.wildcards == 1)
+   66|      0|    self.put(path: path, handler: toFunction(handler, with: path))
+   67|      0|  }
+   68|      0|  public func put(path: String, handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   69|      0|    precondition(path.wildcards == 2)
+   70|      0|    self.put(path: path, handler: toFunction(handler, with: path))
+   71|      0|  }
+   72|      0|  public func put(path: String, handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   73|      0|    precondition(path.wildcards == 3)
+   74|      0|    self.put(path: path, handler: toFunction(handler, with: path))
+   75|      0|  }
+   76|      0|  public func put(path: String, handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   77|      0|    precondition(path.wildcards == 4)
+   78|      0|    self.put(path: path, handler: toFunction(handler, with: path))
+   79|      0|  }
+   80|      0|  public func put(path: String, handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   81|      0|    precondition(path.wildcards == 5)
+   82|      0|    self.put(path: path, handler: toFunction(handler, with: path))
+   83|      0|  }
+   84|       |
+   85|      0|  public func patch(path: String, handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+   86|      0|    precondition(path.wildcards == 1)
+   87|      0|    self.patch(path: path, handler: toFunction(handler, with: path))
+   88|      0|  }
+   89|      0|  public func patch(path: String, handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   90|      0|    precondition(path.wildcards == 2)
+   91|      0|    self.patch(path: path, handler: toFunction(handler, with: path))
+   92|      0|  }
+   93|      0|  public func patch(path: String, handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   94|      0|    precondition(path.wildcards == 3)
+   95|      0|    self.patch(path: path, handler: toFunction(handler, with: path))
+   96|      0|  }
+   97|      0|  public func patch(path: String, handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+   98|      0|    precondition(path.wildcards == 4)
+   99|      0|    self.patch(path: path, handler: toFunction(handler, with: path))
+  100|      0|  }
+  101|      0|  public func patch(path: String, handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  102|      0|    precondition(path.wildcards == 5)
+  103|      0|    self.patch(path: path, handler: toFunction(handler, with: path))
+  104|      0|  }
+  105|       |
+  106|      0|  public func delete(path: String, handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+  107|      0|    precondition(path.wildcards == 1)
+  108|      0|    self.delete(path: path, handler: toFunction(handler, with: path))
+  109|      0|  }
+  110|      0|  public func delete(path: String, handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  111|      0|    precondition(path.wildcards == 2)
+  112|      0|    self.delete(path: path, handler: toFunction(handler, with: path))
+  113|      0|  }
+  114|      0|  public func delete(path: String, handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  115|      0|    precondition(path.wildcards == 3)
+  116|      0|    self.delete(path: path, handler: toFunction(handler, with: path))
+  117|      0|  }
+  118|      0|  public func delete(path: String, handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  119|      0|    precondition(path.wildcards == 4)
+  120|      0|    self.delete(path: path, handler: toFunction(handler, with: path))
+  121|      0|  }
+  122|      0|  public func delete(path: String, handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  123|      0|    precondition(path.wildcards == 5)
+  124|      0|    self.delete(path: path, handler: toFunction(handler, with: path))
+  125|      0|  }
+  126|       |
+  127|      0|  public func options(path: String, handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+  128|      0|    precondition(path.wildcards == 1)
+  129|      0|    self.options(path: path, handler: toFunction(handler, with: path))
+  130|      0|  }
+  131|      0|  public func options(path: String, handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  132|      0|    precondition(path.wildcards == 2)
+  133|      0|    self.options(path: path, handler: toFunction(handler, with: path))
+  134|      0|  }
+  135|      0|  public func options(path: String, handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  136|      0|    precondition(path.wildcards == 3)
+  137|      0|    self.options(path: path, handler: toFunction(handler, with: path))
+  138|      0|  }
+  139|      0|  public func options(path: String, handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  140|      0|    precondition(path.wildcards == 4)
+  141|      0|    self.options(path: path, handler: toFunction(handler, with: path))
+  142|      0|  }
+  143|      0|  public func options(path: String, handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  144|      0|    precondition(path.wildcards == 5)
+  145|      0|    self.options(path: path, handler: toFunction(handler, with: path))
+  146|      0|  }
+  147|       |
+  148|      0|  public func head(path: String, handler: @escaping (RequestType, String, ResponseType) -> (RequestType, ResponseType)) {
+  149|      0|    precondition(path.wildcards == 1)
+  150|      0|    self.head(path: path, handler: toFunction(handler, with: path))
+  151|      0|  }
+  152|      0|  public func head(path: String, handler: @escaping (RequestType, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  153|      0|    precondition(path.wildcards == 2)
+  154|      0|    self.head(path: path, handler: toFunction(handler, with: path))
+  155|      0|  }
+  156|      0|  public func head(path: String, handler: @escaping (RequestType, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  157|      0|    precondition(path.wildcards == 3)
+  158|      0|    self.head(path: path, handler: toFunction(handler, with: path))
+  159|      0|  }
+  160|      0|  public func head(path: String, handler: @escaping (RequestType, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  161|      0|    precondition(path.wildcards == 4)
+  162|      0|    self.head(path: path, handler: toFunction(handler, with: path))
+  163|      0|  }
+  164|      0|  public func head(path: String, handler: @escaping (RequestType, String, String, String, String, String, ResponseType) -> (RequestType, ResponseType)) {
+  165|      0|    precondition(path.wildcards == 5)
+  166|      0|    self.head(path: path, handler: toFunction(handler, with: path))
+  167|      0|  }
+  168|       |
+  169|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/Router/TitanRoutingExtension.swift:
+    1|       |//
+    2|       |// TitanRoutingExtension.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |extension Titan {
+   19|       |  /// Core routing handler for Titan Routing.
+   20|       |  /// Passing `nil` for the method results in matching all methods for a given path
+   21|       |  /// Path matching is defined in `matchRoute` method, documented in `docs/Routes.md`
+   22|      0|  public func route(method: String? = nil, path: String, handler: @escaping Function) {
+   23|      0|    let routeFunction: Function = { (req, res) in
+   24|      0|      if let m = method, m.uppercased() != req.method.uppercased() {
+   25|      0|        return (req, res)
+   26|      0|      }
+   27|      0|      guard matchRoute(path: req.path.prefixUpToQuery(), route: path) else {
+   28|      0|        return (req, res)
+   29|      0|      }
+   30|      0|      return handler(req, res)
+   31|      0|    }
+   32|      0|    addFunction(routeFunction)
+   33|      0|  }
+   34|       |
+   35|       |  /// Synonym for `route`
+   36|      0|  public func addFunction(path: String, handler: @escaping Function) {
+   37|      0|    route(path: path, handler: handler)
+   38|      0|  }
+   39|       |
+   40|       |  /// Synonym for `route`
+   41|      0|  public func allMethods(path: String, handler: @escaping Function) {
+   42|      0|    route(path: path, handler: handler)
+   43|      0|  }
+   44|       |
+   45|       |}
+   46|       |
+   47|       |/// Match a given path with a route. Segments containing an asterisk are treated as wild.
+   48|       |/// Assuming querystring has already been stripped, including the question mark
+   49|       |private func matchRoute(path: String, route: String) -> Bool {
+   50|       |  guard route != "*" else { return true } // If it's a wildcard, bail out – I hope the branch predictor's okay with this!
+   51|       |  guard route.wildcards != 0 else {
+   52|       |    return path == route // If there are no wildcards, this is easy
+   53|       |  }
+   54|       |
+   55|       |  // WILDCARD LOGIC
+   56|       |
+   57|       |  let splitPath = path.splitOnSlashes() // /foo/bar/baz -> [foo, bar, baz]
+   58|       |  let splitRoute = route.splitOnSlashes() // /foo/*/baz -> [foo, *, baz]
+   59|       |
+   60|       |  guard splitRoute.count == splitPath.count else { // if the number of route segments != path segments, then it can't be a match
+   61|       |    return false
+   62|       |  }
+   63|       |  let zipped = zip(splitPath, splitRoute) // produce [(foo, foo), (bar, *), (baz, baz)]
+   64|       |  for (pathSegment, routeSegment) in zipped {
+   65|       |    if (routeSegment != pathSegment) && (routeSegment != "*") { // In other words, check they're identical except when the route segment is a wildcard
+   66|       |      return false
+   67|       |    } else {
+   68|       |      continue
+   69|       |    }
+   70|       |  }
+   71|       |  return true
+   72|       |}
+   73|       |
+   74|       |extension String {
+   75|       |  func splitOnSlashes() -> [String] {
+   76|      0|    return self.characters.split(separator: "/").map { String($0) }
+   77|       |  }
+   78|       |}
+   79|       |
+   80|       |extension String {
+   81|       |  func prefixUpToQuery() -> String {
+   82|       |    let chars = self.characters
+   83|       |    return chars.index(of: "?")
+   84|      0|      .map { chars.prefix(upTo: $0) }
+   85|      0|      .map(String.init) ?? self
+   86|       |  }
+   87|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/TitanCORS.swift:
+    1|       |//
+    2|       |// TitanCORS.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |/// Allow this app to be accessed with total violation of Same Origin Policy.
+   19|       |/// This adds the `AllowAllOrigins` and `RespondToPreflightAllowingAllMethods` functions.
+   20|      0|public func addInsecureCORSSupport(_ titan: Titan) {
+   21|      0|  titan.addFunction(respondToPreflightAllowingAllMethods)
+   22|      0|  titan.addFunction(allowAllOrigins)
+   23|      0|}
+   24|       |
+   25|       |/// A header that allows all origins. You probably want to use the `AllowAllOrigins` Function instead
+   26|       |public let allowAllOriginsHeader: Header = ("access-control-allow-origin", "*")
+   27|       |
+   28|       |/// If one isn't present, insert a wildcard CORS allowed origin header
+   29|      0|public let allowAllOrigins: Function = { req, res in
+   30|      0|  var respHeaders = res.headers
+   31|      0|  guard (respHeaders.contains { header in
+   32|      0|    return header.name.lowercased() == "access-control-allow-origin"
+   33|      0|  } != true) else {
+   34|      0|      return (req, res)
+   35|      0|  }
+   36|      0|  respHeaders.append(allowAllOriginsHeader)
+   37|      0|  return (req, Response(code: res.code, body: res.body, headers: respHeaders))
+   38|      0|}
+   39|       |
+   40|       |/// Respond to a CORS preflight request, allowing all methods requested in the preflight.
+   41|      0|public let respondToPreflightAllowingAllMethods: Function = { req, res in
+   42|      0|  guard req.method.uppercased() == "OPTIONS" else {
+   43|      0|    return (req, res)
+   44|      0|  }
+   45|      0|  guard let requestedMethods = (req.headers.first(where: { (name, _) -> Bool in
+   46|      0|    return name.lowercased() == "access-control-request-method"
+   47|      0|  }).map { (header: Header) -> String in
+   48|      0|    return header.value
+   49|      0|  }) else {
+   50|      0|    return (req, res)
+   51|      0|  }
+   52|      0|  var headers: [Header] = []
+   53|      0|  headers.append(("access-control-allow-methods", requestedMethods))
+   54|      0|  if let requestedHeaders = (req.headers.first(where: { (name, _) -> Bool in
+   55|      0|    return name.lowercased() == "access-control-request-headers"
+   56|      0|  }).map { (header: Header) -> String in
+   57|      0|    return header.value
+   58|      0|  }) {
+   59|      0|    headers.append(("access-control-allow-headers", requestedHeaders))
+   60|      0|  } else {
+   61|      0|    headers.append(("access-control-allow-headers", "*"))
+   62|      0|  }
+   63|      0|  return (req, Response(code: 200, body: "", headers: headers))
+   64|      0|}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/TitanCore.swift:
+    1|       |//
+    2|       |// TitanCore.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |/// Little known fact: HTTP headers need not be unique!
+   19|       |public typealias Header = (name: String, value: String)
+   20|       |
+   21|       |public protocol RequestType {
+   22|       |    var body: String { get }
+   23|       |    var path: String { get }
+   24|       |    var method: String { get }
+   25|       |    var headers: [Header] { get }
+   26|       |}
+   27|       |
+   28|       |public protocol ResponseType {
+   29|       |    var body: String { get }
+   30|       |    /// Status code. We have deliberately eschewed a status line since HTTP/2 ignores it, rarely used.
+   31|       |    var code: Int { get }
+   32|       |    var headers: [Header] { get }
+   33|       |}
+   34|       |
+   35|       |public struct Request {
+   36|       |    public var method: String
+   37|       |    public var path: String
+   38|       |    public var body: String
+   39|       |    public var headers: [Header]
+   40|       |
+   41|      0|    public init(method: String, path: String, body: String, headers: [Header]) {
+   42|      0|        self.method = method
+   43|      0|        self.path = path
+   44|      0|        self.body = body
+   45|      0|        self.headers = headers
+   46|      0|    }
+   47|       |}
+   48|       |
+   49|       |public struct Response {
+   50|       |    public var code: Int
+   51|       |    public var body: String
+   52|       |    public var headers: [Header]
+   53|       |
+   54|      0|    public init(code: Int, body: String, headers: [Header]) {
+   55|      0|        self.code = code
+   56|      0|        self.body = body
+   57|      0|        self.headers = headers
+   58|      0|    }
+   59|       |}
+   60|       |
+   61|       |extension Response: ResponseType {}
+   62|       |extension Request: RequestType {}
+   63|       |
+   64|       |extension Response {
+   65|      0|    public init(response: ResponseType) {
+   66|      0|        self.init(code: response.code, body: response.body, headers: response.headers)
+   67|      0|    }
+   68|       |}
+   69|       |
+   70|       |extension Request {
+   71|      0|    public init(request: RequestType) {
+   72|      0|        self.init(method: request.method, path: request.path, body: request.body, headers: request.headers)
+   73|      0|    }
+   74|       |}
+   75|       |
+   76|       |extension ResponseType {
+   77|      0|    public func copy() -> Response {
+   78|      0|        return Response(response: self)
+   79|      0|    }
+   80|       |}
+   81|       |
+   82|       |extension RequestType {
+   83|      0|    public func copy() -> Request {
+   84|      0|        return Request(request: self)
+   85|      0|    }
+   86|       |}
+   87|       |
+   88|       |public typealias Function = (RequestType, ResponseType) -> (RequestType, ResponseType)
+   89|       |public final class Titan {
+   90|      0|    public init() {}
+   91|       |    private var functionStack = [Function]()
+   92|       |
+   93|       |    /// add a function to Titan’s request / response processing flow
+   94|      0|    public func addFunction(_ function: @escaping Function) {
+   95|      0|        functionStack.append(function)
+   96|      0|    }
+   97|       |
+   98|       |    /// Titan handler which should be given to a server
+   99|      0|    public func app(request: RequestType) -> ResponseType {
+  100|      0|        typealias Result = (RequestType, ResponseType)
+  101|      0|
+  102|      0|        let initialReq = request
+  103|      0|        let initialRes = Response(code: -1, body: "", headers: [])
+  104|      0|        let initial: Result = (initialReq, initialRes)
+  105|      0|        let res = functionStack.reduce(initial) { (res, next) -> Result in
+  106|      0|            return next(res.0, res.1)
+  107|      0|        }
+  108|      0|        return res.1
+  109|      0|    }
+  110|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/TitanErrorHandling.swift:
+    1|       |//
+    2|       |// TitanErrorHandling.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|      0|public let DefaultErrorHandler: (Error) -> (ResponseType) = { err in
+   19|      0|  return Response(code: 500, body: String(describing: err), headers: [])
+   20|      0|}
+   21|       |
+   22|       |extension Titan {
+   23|      0|  public func addFunction(errorHandler: @escaping (Error) -> (ResponseType), handler: @escaping ThrowingFunction) {
+   24|      0|    self.addFunction(toFunction(handler, errorHandler: errorHandler))
+   25|      0|  }
+   26|       |}
+   27|       |
+   28|       |public typealias ThrowingFunction = (RequestType, ResponseType) throws -> (RequestType, ResponseType)
+   29|       |
+   30|       |/// Convert a throwing function to a non throwing function, calling the specified error handler in case of throws.
+   31|       |public func toFunction(_ handler: @escaping ThrowingFunction, errorHandler: @escaping (Error) -> (ResponseType)) -> Function {
+   32|      0|    return { req, res in
+   33|      0|      do {
+   34|      0|        return try handler(req, res)
+   35|      0|      } catch {
+   36|      0|        return (req, errorHandler(error))
+   37|      0|      }
+   38|      0|    }
+   39|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/TitanFormURLEncodedBodyParser.swift:
+    1|       |//
+    2|       |// TitanFormURLEncodedBodyParser.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |import Foundation
+   19|       |
+   20|       |public extension RequestType {
+   21|      0|  public var formURLEncodedBody: [(name: String, value: String)] {
+   22|      0|    return parse(body: self.body)
+   23|      0|  }
+   24|      0|  public var postParams: [String : String] {
+   25|      0|    var ret = [String : String]()
+   26|      0|    let keys = parse(body: self.body)
+   27|      0|    for (k, v) in keys {
+   28|      0|      ret[k] = v
+   29|      0|    }
+   30|      0|    return ret
+   31|      0|  }
+   32|       |}
+   33|       |
+   34|       |/*
+   35|       | Parse application/x-www-form-urlencoded bodies
+   36|       | Returns as many name-value pairs as possible
+   37|       | Liberal in what it accepts, any failures to delimit pairs or decode percent
+   38|       | encoding will result in empty strings
+   39|       | */
+   40|       |func parse(body: String) -> [(name: String, value: String)] {
+   41|       |  var retValue = [(name: String, value: String)]()
+   42|       |
+   43|       |  let pairs = body.components(separatedBy: "&") // Separate the tuples
+   44|       |
+   45|       |  for element in pairs {
+   46|       |    let pair = element.components(separatedBy: "=")
+   47|      0|      .map { $0.replacingOccurrences(of: "+", with: " ") } // Plus becomes a space, no %20 here
+   48|      0|      .map { $0.removingPercentEncoding ?? "" } // Remove percent encoding, failure to remove percent encoding is replaced with empty string
+   49|       |    if pair.count == 2 {
+   50|       |      retValue.append((pair[0], pair[1]))
+   51|       |    } else if pair.count == 1 { // support ?key=&key2=string
+   52|       |      retValue.append((pair[0], ""))
+   53|       |    } else {
+   54|       |      break
+   55|       |    }
+   56|       |  }
+   57|       |  return retValue
+   58|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/TitanJSONRequestBody.swift:
+    1|       |//
+    2|       |// TitanJSONRequestBody.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |import Foundation
+   19|       |
+   20|       |public extension RequestType {
+   21|       |  /// Return the body content as a JSON object, if possible, otherwise return nil.
+   22|       |  /// Uses `Foundation` JSONSerialization for decoding.
+   23|      0|  var json: Any? {
+   24|      0|    guard let bodyAsData = self.body.data(using: .utf8) else {
+   25|      0|      return nil
+   26|      0|    }
+   27|      0|    return try? JSONSerialization.jsonObject(with: bodyAsData,
+   28|      0|                                             options: [])
+   29|      0|  }
+   30|       |}
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKServer/Sources/SKServer/Titan/TitanQueryString.swift:
+    1|       |//
+    2|       |// TitanQueryString.swift
+    3|       |//
+    4|       |// Copyright 2017 Enervolution GmbH
+    5|       |//
+    6|       |// Licensed under the Apache License, Version 2.0 (the "License");
+    7|       |// you may not use this file except in compliance with the License.
+    8|       |// You may obtain a copy of the License at
+    9|       |//
+   10|       |// https://www.apache.org/licenses/LICENSE-2.0
+   11|       |//
+   12|       |// Unless required by applicable law or agreed to in writing, software
+   13|       |// distributed under the License is distributed on an "AS IS" BASIS,
+   14|       |// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   15|       |// See the License for the specific language governing permissions and
+   16|       |// limitations under the License.
+   17|       |
+   18|       |import class Foundation.NSString
+   19|       |
+   20|       |public extension RequestType {
+   21|      0|  public var queryPairs: [(key: String, value: String)] {
+   22|      0|    let chars = self.path.characters
+   23|      0|    guard let indexOfQuery = chars.index(of: "?") else {
+   24|      0|      return []
+   25|      0|    }
+   26|      0|    let query = chars.suffix(from: indexOfQuery).dropFirst()
+   27|      0|    let pairs = query.split(separator: "&")
+   28|      0|    return pairs.map { pair -> (key: String, value: String) in
+   29|      0|      let comps = pair.split(separator: "=").map { chars -> String in
+   30|      0|        return String(chars).removingPercentEncoding ?? ""
+   31|      0|      }
+   32|      0|      switch comps.count {
+   33|      0|      case 1:
+   34|      0|        return (key: String(comps[0]), value: "")
+   35|      0|      case 2:
+   36|      0|        return (key: String(comps[0]), value: String(comps[1]))
+   37|      0|      default:
+   38|      0|        return (key: "", value: "")
+   39|      0|      }
+   40|      0|    }
+   41|      0|  }
+   42|      0|  public var query: [String:String] {
+   43|      0|    var query: [String:String] = [:]
+   44|      0|    for (name, value) in self.queryPairs {
+   45|      0|      query[name] = value
+   46|      0|    }
+   47|      0|    return query
+   48|      0|  }
+   49|       |}
+

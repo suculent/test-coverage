@@ -1,0 +1,341 @@
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKRTMAPI/Sources/SKRTMAPI/Conformers/StarscreamRTM.swift:
+    1|       |//
+    2|       |//  StarscreamRTM.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |#if os(macOS) || os(iOS) || os(tvOS)
+   25|       |import Foundation
+   26|       |import SKCore
+   27|       |import Starscream
+   28|       |
+   29|       |public class StarscreamRTM: RTMWebSocket, WebSocketDelegate {
+   30|       |
+   31|       |    public weak var delegate: RTMDelegate?
+   32|       |    private var webSocket: WebSocket?
+   33|       |
+   34|     10|    public required init() {}
+   35|       |
+   36|       |    // MARK: - RTM
+   37|      9|    public func connect(url: URL) {
+   38|      9|        self.webSocket = WebSocket(url: url)
+   39|      9|        self.webSocket?.delegate = self
+   40|      9|        self.webSocket?.connect()
+   41|      9|    }
+   42|       |
+   43|      0|    public func disconnect() {
+   44|      0|        webSocket?.disconnect()
+   45|      0|    }
+   46|       |
+   47|      0|    public func sendMessage(_ message: String) throws {
+   48|      0|        guard webSocket != nil else {
+   49|      0|            throw SlackError.rtmConnectionError
+   50|      0|        }
+   51|      0|        webSocket?.write(string: message)
+   52|      0|    }
+   53|       |
+   54|      0|    public func ping() {
+   55|      0|        webSocket?.write(ping: Data())
+   56|      0|    }
+   57|       |
+   58|       |    // MARK: - WebSocketDelegate
+   59|      8|    public func websocketDidConnect(socket: WebSocketClient) {
+   60|      8|        delegate?.didConnect()
+   61|      8|    }
+   62|       |
+   63|      0|    public func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
+   64|      0|        webSocket = nil
+   65|      0|        delegate?.disconnected()
+   66|      0|    }
+   67|       |
+   68|      7|    public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+   69|      7|        delegate?.receivedMessage(text)
+   70|      7|    }
+   71|       |
+   72|      0|    public func websocketDidConnect(socket: WebSocket) {
+   73|      0|        delegate?.didConnect()
+   74|      0|    }
+   75|       |
+   76|      0|    public func websocketDidReceiveData(socket: WebSocketClient, data: Data) {}
+   77|       |}
+   78|       |
+   79|       |#endif
+
+/Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKRTMAPI/Sources/SKRTMAPI/SKRTMAPI.swift:
+    1|       |//
+    2|       |// SKRTMAPI.swift
+    3|       |//
+    4|       |// Copyright © 2017 Peter Zignego. All rights reserved.
+    5|       |//
+    6|       |// Permission is hereby granted, free of charge, to any person obtaining a copy
+    7|       |// of this software and associated documentation files (the "Software"), to deal
+    8|       |// in the Software without restriction, including without limitation the rights
+    9|       |// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   10|       |// copies of the Software, and to permit persons to whom the Software is
+   11|       |// furnished to do so, subject to the following conditions:
+   12|       |//
+   13|       |// The above copyright notice and this permission notice shall be included in
+   14|       |// all copies or substantial portions of the Software.
+   15|       |//
+   16|       |// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   17|       |// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   18|       |// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   19|       |// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   20|       |// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   21|       |// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   22|       |// THE SOFTWARE.
+   23|       |
+   24|       |#if os(Linux)
+   25|       |import Dispatch
+   26|       |#endif
+   27|       |import Foundation
+   28|       |import SKWebAPI
+   29|       |@_exported import SKCore
+   30|       |
+   31|       |public protocol RTMWebSocket {
+   32|       |    init()
+   33|       |    var delegate: RTMDelegate? { get set }
+   34|       |    func connect(url: URL)
+   35|       |    func disconnect()
+   36|       |    func sendMessage(_ message: String) throws
+   37|       |}
+   38|       |
+   39|       |public protocol RTMAdapter: class {
+   40|       |    func initialSetup(json: [String: Any], instance: SKRTMAPI)
+   41|       |    func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI)
+   42|       |    func connectionClosed(with error: Error, instance: SKRTMAPI)
+   43|       |}
+   44|       |
+   45|       |public protocol RTMDelegate: class {
+   46|       |    func didConnect()
+   47|       |    func disconnected()
+   48|       |    func receivedMessage(_ message: String)
+   49|       |}
+   50|       |
+   51|       |public final class SKRTMAPI: RTMDelegate {
+   52|       |
+   53|       |    public var rtm: RTMWebSocket
+   54|       |    public var adapter: RTMAdapter?
+   55|       |    public var token = "xoxp-SLACK_AUTH_TOKEN"
+   56|       |    internal var options: RTMOptions
+   57|       |    public private(set) var connected = false
+   58|       |
+   59|       |    var ping: Double?
+   60|       |    var pong: Double?
+   61|       |
+   62|     10|    public init(withAPIToken token: String, options: RTMOptions = RTMOptions(), rtm: RTMWebSocket? = nil) {
+   63|     10|        self.token = token
+   64|     10|        self.options = options
+   65|     10|        if let rtm = rtm {
+   66|      0|            self.rtm = rtm
+   67|     10|        } else {
+   68|     10|            #if os(Linux)
+   69|     10|                self.rtm = VaporEngineRTM()
+   70|     10|            #else
+   71|     10|                self.rtm = StarscreamRTM()
+   72|     10|            #endif
+   73|     10|        }
+   74|     10|        self.rtm.delegate = self
+   75|     10|    }
+   76|       |
+   77|     10|    public func connect(withInfo: Bool = true) {
+   78|     10|        if withInfo {
+   79|     10|            WebAPI.rtmStart(
+   80|     10|                token: token,
+   81|     10|                batchPresenceAware: options.noUnreads,
+   82|     10|                mpimAware: options.mpimAware,
+   83|     10|                noLatest: options.noLatest,
+   84|     10|                noUnreads: options.noUnreads,
+   85|     10|                presenceSub: options.presenceSub,
+   86|     10|                simpleLatest: options.simpleLatest,
+   87|     10|                success: {(response) in
+   88|      9|                    self.connectWithResponse(response)
+   89|      9|                }, failure: { (error) in
+   90|     10|                    self.adapter?.connectionClosed(with: error, instance: self)
+   91|     10|                }
+   92|     10|            )
+   93|     10|        } else {
+   94|      0|            WebAPI.rtmConnect(
+   95|      0|                token: token,
+   96|      0|                batchPresenceAware: options.batchPresenceAware,
+   97|      0|                presenceSub: options.presenceSub,
+   98|      0|                success: {(response) in
+   99|      0|                    self.connectWithResponse(response)
+  100|      0|                }, failure: { (error) in
+  101|      0|                    self.adapter?.connectionClosed(with: error, instance: self)
+  102|      0|                }
+  103|      0|            )
+  104|     10|        }
+  105|     10|    }
+  106|       |
+  107|      0|    public func disconnect() {
+  108|      0|        rtm.disconnect()
+  109|      0|    }
+  110|       |
+  111|      0|    public func sendMessage(_ message: String, channelID: String, id: String? = nil) throws {
+  112|      0|        guard connected else {
+  113|      0|            throw SlackError.rtmConnectionError
+  114|      0|        }
+  115|      0|        do {
+  116|      0|            let string = try format(message: message, channel: channelID, id: id)
+  117|      0|            try rtm.sendMessage(string)
+  118|      0|        } catch let error {
+  119|      0|            throw error
+  120|      0|        }
+  121|      0|    }
+  122|       |
+  123|      0|    public func sendThreadedMessage(_ message: String, channelID: String, threadTs: String, broadcastReply: Bool = false) throws {
+  124|      0|        guard connected else {
+  125|      0|            throw SlackError.rtmConnectionError
+  126|      0|        }
+  127|      0|        do {
+  128|      0|            let string = try format(message: message, channel: channelID, threadTs: threadTs, broadcastReply: broadcastReply)
+  129|      0|            try rtm.sendMessage(string)
+  130|      0|        } catch let error {
+  131|      0|            throw error
+  132|      0|        }
+  133|      0|    }
+  134|       |
+  135|       |    private func connectWithResponse(_ response: [String: Any]) {
+  136|       |        guard
+  137|       |            let socketURL = response["url"] as? String,
+  138|       |            let url = URL(string: socketURL)
+  139|       |        else {
+  140|       |            return
+  141|       |        }
+  142|       |        self.rtm.connect(url: url)
+  143|       |        self.adapter?.initialSetup(json: response, instance: self)
+  144|       |    }
+  145|       |
+  146|       |    private func format(message: String,
+  147|       |                        channel: String,
+  148|       |                        id: String? = nil,
+  149|       |                        threadTs: String? = nil,
+  150|       |                        broadcastReply: Bool = false
+  151|       |    ) throws -> String {
+  152|       |        let json: [String: Any?] = [
+  153|       |            "id": id ?? Date().slackTimestamp,
+  154|       |            "type": "message",
+  155|       |            "channel": channel,
+  156|       |            "text": message,
+  157|       |            "thread_ts": threadTs,
+  158|       |            "broadcastReply": broadcastReply
+  159|       |        ]
+  160|       |        guard
+  161|       |            let data = try? JSONSerialization.data(withJSONObject: filterNilParameters(json), options: []),
+  162|       |            let str = String(data: data, encoding: String.Encoding.utf8)
+  163|       |        else {
+  164|       |            throw SlackError.clientJSONError
+  165|       |        }
+  166|       |        return str
+  167|       |    }
+  168|       |
+  169|       |    // MARK: - RTM Ping
+  170|      8|    private func pingRTMServer() {
+  171|      8|        let pingInterval = Double(UInt64(options.pingInterval * Double(UInt64.nanosecondsPerSecond))) / Double(UInt64.nanosecondsPerSecond)
+  172|      8|        let delay = DispatchTime.now() + pingInterval
+  173|      8|        DispatchQueue.main.asyncAfter(deadline: delay) {
+  174|      0|            guard self.connected && self.isConnectionTimedOut else {
+  175|      0|                self.disconnect()
+  176|      0|                return
+  177|      0|            }
+  178|      0|            try? self.sendRTMPing()
+  179|      0|            self.pingRTMServer()
+  180|      0|        }
+  181|      8|    }
+  182|       |
+  183|       |    private func sendRTMPing() throws {
+  184|       |        guard connected else {
+  185|       |            throw SlackError.rtmConnectionError
+  186|       |        }
+  187|       |        let json: [String: Any] = [
+  188|       |            "id": Date().slackTimestamp,
+  189|       |            "type": "ping"
+  190|       |        ]
+  191|       |        guard let data = try? JSONSerialization.data(withJSONObject: json, options: []) else {
+  192|       |            throw SlackError.clientJSONError
+  193|       |        }
+  194|       |        if let string = String(data: data, encoding: String.Encoding.utf8) {
+  195|       |            ping = json["id"] as? Double
+  196|       |            try rtm.sendMessage(string)
+  197|       |        }
+  198|       |    }
+  199|       |
+  200|       |    var isConnectionTimedOut: Bool {
+  201|       |        if let pong = pong, let ping = ping {
+  202|       |            if pong - ping < options.timeout {
+  203|       |                return true
+  204|       |            } else {
+  205|       |                return false
+  206|       |            }
+  207|       |        } else {
+  208|       |            return true
+  209|       |        }
+  210|       |    }
+  211|       |
+  212|       |    // MARK: RTMDelegate
+  213|      8|    public func didConnect() {
+  214|      8|        connected = true
+  215|      8|        pingRTMServer()
+  216|      8|    }
+  217|       |
+  218|      0|    public func disconnected() {
+  219|      0|        connected = false
+  220|      0|        if options.reconnect {
+  221|      0|            connect()
+  222|      0|        } else {
+  223|      0|            adapter?.connectionClosed(with: SlackError.rtmConnectionError, instance: self)
+  224|      0|        }
+  225|      0|    }
+  226|       |
+  227|      7|    public func receivedMessage(_ message: String) {
+  228|      7|        guard let data = message.data(using: String.Encoding.utf8) else {
+  229|      0|            return
+  230|      7|        }
+  231|      7|
+  232|      7|        if let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any] {
+  233|      7|            dispatch(json)
+  234|      7|        }
+  235|      7|    }
+  236|       |
+  237|       |    internal func dispatch(_ anEvent: [String: Any]) {
+  238|       |        let event = Event(anEvent)
+  239|      0|        let type = event.type ?? .unknown
+  240|       |        switch type {
+  241|       |        case .hello:
+  242|       |            connected = true
+  243|       |        case .pong:
+  244|       |            pong = event.replyTo
+  245|       |        case .teamMigrationStarted:
+  246|       |            connect()
+  247|       |        case .error:
+  248|       |            print("Error: \(anEvent)")
+  249|       |        case .goodbye:
+  250|       |            connect()
+  251|       |        case .unknown:
+  252|      0|            print("Unsupported event of type: \(anEvent["type"] ?? "No Type Information")")
+  253|       |        default:
+  254|       |            break
+  255|       |        }
+  256|       |        adapter?.notificationForEvent(event, type: type, instance: self)
+  257|       |    }
+  258|       |}
+
