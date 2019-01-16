@@ -48,12 +48,12 @@
    47|     10|        let request = URLRequest(url: url)
    48|     10|
    49|     10|        session.dataTask(with: request) {(data, response, publicError) in
-   50|      9|            do {
-   51|      9|                successClosure(try NetworkInterface.handleResponse(data, response: response, publicError: publicError))
-   52|      9|            } catch let error {
+   50|     10|            do {
+   51|     10|                successClosure(try NetworkInterface.handleResponse(data, response: response, publicError: publicError))
+   52|     10|            } catch let error {
    53|      0|                errorClosure(error as? SlackError ?? SlackError.unknownError)
-   54|      8|            }
-   55|      8|        }.resume()
+   54|     10|            }
+   55|     10|        }.resume()
    56|     10|    }
    57|       |
    58|       |    //Adapted from https://gist.github.com/erica/baa8a187a5b4796dab27

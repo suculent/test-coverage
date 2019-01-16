@@ -35,11 +35,11 @@
    34|     10|    public required init() {}
    35|       |
    36|       |    // MARK: - RTM
-   37|      9|    public func connect(url: URL) {
-   38|      9|        self.webSocket = WebSocket(url: url)
-   39|      9|        self.webSocket?.delegate = self
-   40|      9|        self.webSocket?.connect()
-   41|      9|    }
+   37|     10|    public func connect(url: URL) {
+   38|     10|        self.webSocket = WebSocket(url: url)
+   39|     10|        self.webSocket?.delegate = self
+   40|     10|        self.webSocket?.connect()
+   41|     10|    }
    42|       |
    43|      0|    public func disconnect() {
    44|      0|        webSocket?.disconnect()
@@ -57,18 +57,18 @@
    56|      0|    }
    57|       |
    58|       |    // MARK: - WebSocketDelegate
-   59|      8|    public func websocketDidConnect(socket: WebSocketClient) {
-   60|      8|        delegate?.didConnect()
-   61|      8|    }
+   59|      6|    public func websocketDidConnect(socket: WebSocketClient) {
+   60|      6|        delegate?.didConnect()
+   61|      6|    }
    62|       |
    63|      0|    public func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
    64|      0|        webSocket = nil
    65|      0|        delegate?.disconnected()
    66|      0|    }
    67|       |
-   68|      7|    public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
-   69|      7|        delegate?.receivedMessage(text)
-   70|      7|    }
+   68|      4|    public func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+   69|      4|        delegate?.receivedMessage(text)
+   70|      4|    }
    71|       |
    72|      0|    public func websocketDidConnect(socket: WebSocket) {
    73|      0|        delegate?.didConnect()
@@ -167,8 +167,8 @@
    85|     10|                presenceSub: options.presenceSub,
    86|     10|                simpleLatest: options.simpleLatest,
    87|     10|                success: {(response) in
-   88|      9|                    self.connectWithResponse(response)
-   89|      9|                }, failure: { (error) in
+   88|     10|                    self.connectWithResponse(response)
+   89|     10|                }, failure: { (error) in
    90|     10|                    self.adapter?.connectionClosed(with: error, instance: self)
    91|     10|                }
    92|     10|            )
@@ -249,10 +249,10 @@
   167|       |    }
   168|       |
   169|       |    // MARK: - RTM Ping
-  170|      8|    private func pingRTMServer() {
-  171|      8|        let pingInterval = Double(UInt64(options.pingInterval * Double(UInt64.nanosecondsPerSecond))) / Double(UInt64.nanosecondsPerSecond)
-  172|      8|        let delay = DispatchTime.now() + pingInterval
-  173|      8|        DispatchQueue.main.asyncAfter(deadline: delay) {
+  170|      6|    private func pingRTMServer() {
+  171|      6|        let pingInterval = Double(UInt64(options.pingInterval * Double(UInt64.nanosecondsPerSecond))) / Double(UInt64.nanosecondsPerSecond)
+  172|      6|        let delay = DispatchTime.now() + pingInterval
+  173|      6|        DispatchQueue.main.asyncAfter(deadline: delay) {
   174|      0|            guard self.connected && self.isConnectionTimedOut else {
   175|      0|                self.disconnect()
   176|      0|                return
@@ -260,7 +260,7 @@
   178|      0|            try? self.sendRTMPing()
   179|      0|            self.pingRTMServer()
   180|      0|        }
-  181|      8|    }
+  181|      6|    }
   182|       |
   183|       |    private func sendRTMPing() throws {
   184|       |        guard connected else {
@@ -292,10 +292,10 @@
   210|       |    }
   211|       |
   212|       |    // MARK: RTMDelegate
-  213|      8|    public func didConnect() {
-  214|      8|        connected = true
-  215|      8|        pingRTMServer()
-  216|      8|    }
+  213|      6|    public func didConnect() {
+  214|      6|        connected = true
+  215|      6|        pingRTMServer()
+  216|      6|    }
   217|       |
   218|      0|    public func disconnected() {
   219|      0|        connected = false
@@ -306,15 +306,15 @@
   224|      0|        }
   225|      0|    }
   226|       |
-  227|      7|    public func receivedMessage(_ message: String) {
-  228|      7|        guard let data = message.data(using: String.Encoding.utf8) else {
+  227|      4|    public func receivedMessage(_ message: String) {
+  228|      4|        guard let data = message.data(using: String.Encoding.utf8) else {
   229|      0|            return
-  230|      7|        }
-  231|      7|
-  232|      7|        if let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any] {
-  233|      7|            dispatch(json)
-  234|      7|        }
-  235|      7|    }
+  230|      4|        }
+  231|      4|
+  232|      4|        if let json = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any] {
+  233|      4|            dispatch(json)
+  234|      4|        }
+  235|      4|    }
   236|       |
   237|       |    internal func dispatch(_ anEvent: [String: Any]) {
   238|       |        let event = Event(anEvent)

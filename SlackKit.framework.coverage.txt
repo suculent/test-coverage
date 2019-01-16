@@ -120,15 +120,15 @@
    97|       |    }
    98|       |
    99|       |    // MARK: - RTM Adapter
-  100|      8|    public func initialSetup(json: [String: Any], instance: SKRTMAPI) {
-  101|      8|        clients[instance.token]?.client?.initialSetup(JSON: json)
-  102|      8|    }
+  100|     10|    public func initialSetup(json: [String: Any], instance: SKRTMAPI) {
+  101|     10|        clients[instance.token]?.client?.initialSetup(JSON: json)
+  102|     10|    }
   103|       |
-  104|      7|    public func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI) {
-  105|      7|        let clientConnection = clients[instance.token]
-  106|      7|        clientConnection?.client?.notificationForEvent(event, type: type)
-  107|      7|        executeCallbackForEvent(event, type: type, clientConnection: clientConnection)
-  108|      7|    }
+  104|      4|    public func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI) {
+  105|      4|        let clientConnection = clients[instance.token]
+  106|      4|        clientConnection?.client?.notificationForEvent(event, type: type)
+  107|      4|        executeCallbackForEvent(event, type: type, clientConnection: clientConnection)
+  108|      4|    }
   109|       |
   110|      0|    public func connectionClosed(with error: Error, instance: SKRTMAPI) {}
   111|       |
@@ -138,7 +138,7 @@
   115|     10|    }
   116|       |
   117|       |    private func executeCallbackForEvent(_ event: Event, type: EventType, clientConnection: ClientConnection?) {
-  118|      7|        let cbs = callbacks.filter {$0.0 == type}
+  118|      4|        let cbs = callbacks.filter {$0.0 == type}
   119|       |        for callback in cbs {
   120|       |            callback.1(event, clientConnection)
   121|       |        }

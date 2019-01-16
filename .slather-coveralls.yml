@@ -1,6 +1,8 @@
 # .slather.yml
 
-coverage_service: cobertura_xml
+# Coveralls.io is currently supported only through Travis CI and Circle CI, which is not free for demo.
+
+coverage_service: coveralls
 workspace: UIPasteboard.xcworkspace
 scheme: UIPasteboard
 configuration: Debug

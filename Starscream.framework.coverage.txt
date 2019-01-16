@@ -685,55 +685,55 @@
   143|       |	
   144|       |	public var enableSOCKSProxy = false
   145|       |    
-  146|      9|    public func connect(url: URL, port: Int, timeout: TimeInterval, ssl: SSLSettings, completion: @escaping ((Error?) -> Void)) {
-  147|      9|        var readStream: Unmanaged<CFReadStream>?
-  148|      9|        var writeStream: Unmanaged<CFWriteStream>?
-  149|      9|        let h = url.host! as NSString
-  150|      9|        CFStreamCreatePairWithSocketToHost(nil, h, UInt32(port), &readStream, &writeStream)
-  151|      9|        inputStream = readStream!.takeRetainedValue()
-  152|      9|        outputStream = writeStream!.takeRetainedValue()
-  153|      9|
-  154|      9|        #if os(watchOS) //watchOS us unfortunately is missing the kCFStream properties to make this work
-  155|      9|        #else
-  156|      9|            if enableSOCKSProxy {
+  146|     10|    public func connect(url: URL, port: Int, timeout: TimeInterval, ssl: SSLSettings, completion: @escaping ((Error?) -> Void)) {
+  147|     10|        var readStream: Unmanaged<CFReadStream>?
+  148|     10|        var writeStream: Unmanaged<CFWriteStream>?
+  149|     10|        let h = url.host! as NSString
+  150|     10|        CFStreamCreatePairWithSocketToHost(nil, h, UInt32(port), &readStream, &writeStream)
+  151|     10|        inputStream = readStream!.takeRetainedValue()
+  152|     10|        outputStream = writeStream!.takeRetainedValue()
+  153|     10|
+  154|     10|        #if os(watchOS) //watchOS us unfortunately is missing the kCFStream properties to make this work
+  155|     10|        #else
+  156|     10|            if enableSOCKSProxy {
   157|      0|                let proxyDict = CFNetworkCopySystemProxySettings()
   158|      0|                let socksConfig = CFDictionaryCreateMutableCopy(nil, 0, proxyDict!.takeRetainedValue())
   159|      0|                let propertyKey = CFStreamPropertyKey(rawValue: kCFStreamPropertySOCKSProxy)
   160|      0|                CFWriteStreamSetProperty(outputStream, propertyKey, socksConfig)
   161|      0|                CFReadStreamSetProperty(inputStream, propertyKey, socksConfig)
-  162|      9|            }
-  163|      9|        #endif
-  164|      9|        
-  165|      9|        guard let inStream = inputStream, let outStream = outputStream else { return }
-  166|      9|        inStream.delegate = self
-  167|      9|        outStream.delegate = self
-  168|      9|        if ssl.useSSL {
-  169|      9|            inStream.setProperty(StreamSocketSecurityLevel.negotiatedSSL as AnyObject, forKey: Stream.PropertyKey.socketSecurityLevelKey)
-  170|      9|            outStream.setProperty(StreamSocketSecurityLevel.negotiatedSSL as AnyObject, forKey: Stream.PropertyKey.socketSecurityLevelKey)
-  171|      9|            #if os(watchOS) //watchOS us unfortunately is missing the kCFStream properties to make this work
-  172|      9|            #else
-  173|      9|                var settings = [NSObject: NSObject]()
-  174|      9|                if ssl.disableCertValidation {
+  162|     10|            }
+  163|     10|        #endif
+  164|     10|        
+  165|     10|        guard let inStream = inputStream, let outStream = outputStream else { return }
+  166|     10|        inStream.delegate = self
+  167|     10|        outStream.delegate = self
+  168|     10|        if ssl.useSSL {
+  169|     10|            inStream.setProperty(StreamSocketSecurityLevel.negotiatedSSL as AnyObject, forKey: Stream.PropertyKey.socketSecurityLevelKey)
+  170|     10|            outStream.setProperty(StreamSocketSecurityLevel.negotiatedSSL as AnyObject, forKey: Stream.PropertyKey.socketSecurityLevelKey)
+  171|     10|            #if os(watchOS) //watchOS us unfortunately is missing the kCFStream properties to make this work
+  172|     10|            #else
+  173|     10|                var settings = [NSObject: NSObject]()
+  174|     10|                if ssl.disableCertValidation {
   175|      0|                    settings[kCFStreamSSLValidatesCertificateChain] = NSNumber(value: false)
-  176|      9|                }
-  177|      9|                if ssl.overrideTrustHostname {
+  176|     10|                }
+  177|     10|                if ssl.overrideTrustHostname {
   178|      0|                    if let hostname = ssl.desiredTrustHostname {
   179|      0|                        settings[kCFStreamSSLPeerName] = hostname as NSString
   180|      0|                    } else {
   181|      0|                        settings[kCFStreamSSLPeerName] = kCFNull
   182|      0|                    }
-  183|      9|                }
-  184|      9|                if let sslClientCertificate = ssl.sslClientCertificate {
+  183|     10|                }
+  184|     10|                if let sslClientCertificate = ssl.sslClientCertificate {
   185|      0|                    settings[kCFStreamSSLCertificates] = sslClientCertificate.streamSSLCertificates
-  186|      9|                }
-  187|      9|                
-  188|      9|                inStream.setProperty(settings, forKey: kCFStreamPropertySSLSettings as Stream.PropertyKey)
-  189|      9|                outStream.setProperty(settings, forKey: kCFStreamPropertySSLSettings as Stream.PropertyKey)
-  190|      9|            #endif
-  191|      9|
-  192|      9|            #if os(Linux)
-  193|      9|            #else
-  194|      9|            if let cipherSuites = ssl.cipherSuites {
+  186|     10|                }
+  187|     10|                
+  188|     10|                inStream.setProperty(settings, forKey: kCFStreamPropertySSLSettings as Stream.PropertyKey)
+  189|     10|                outStream.setProperty(settings, forKey: kCFStreamPropertySSLSettings as Stream.PropertyKey)
+  190|     10|            #endif
+  191|     10|
+  192|     10|            #if os(Linux)
+  193|     10|            #else
+  194|     10|            if let cipherSuites = ssl.cipherSuites {
   195|      0|                #if os(watchOS) //watchOS us unfortunately is missing the kCFStream properties to make this work
   196|      0|                #else
   197|      0|                if let sslContextIn = CFReadStreamCopyProperty(inputStream, CFStreamPropertyKey(rawValue: kCFStreamPropertySSLContext)) as! SSLContext?,
@@ -748,34 +748,34 @@
   206|      0|                    }
   207|      0|                }
   208|      0|                #endif
-  209|      9|            }
-  210|      9|            #endif
-  211|      9|        }
-  212|      9|        
-  213|      9|        CFReadStreamSetDispatchQueue(inStream, FoundationStream.sharedWorkQueue)
-  214|      9|        CFWriteStreamSetDispatchQueue(outStream, FoundationStream.sharedWorkQueue)
-  215|      9|        inStream.open()
-  216|      9|        outStream.open()
-  217|      9|        
-  218|      9|        var out = timeout// wait X seconds before giving up
-  219|      9|        FoundationStream.sharedWorkQueue.async { [weak self] in
-  220|  4.31k|            while !outStream.hasSpaceAvailable {
-  221|  4.30k|                usleep(100) // wait until the socket is ready
-  222|  4.30k|                out -= 100
-  223|  4.30k|                if out < 0 {
+  209|     10|            }
+  210|     10|            #endif
+  211|     10|        }
+  212|     10|        
+  213|     10|        CFReadStreamSetDispatchQueue(inStream, FoundationStream.sharedWorkQueue)
+  214|     10|        CFWriteStreamSetDispatchQueue(outStream, FoundationStream.sharedWorkQueue)
+  215|     10|        inStream.open()
+  216|     10|        outStream.open()
+  217|     10|        
+  218|     10|        var out = timeout// wait X seconds before giving up
+  219|     10|        FoundationStream.sharedWorkQueue.async { [weak self] in
+  220|  6.28k|            while !outStream.hasSpaceAvailable {
+  221|  6.27k|                usleep(100) // wait until the socket is ready
+  222|  6.27k|                out -= 100
+  223|  6.27k|                if out < 0 {
   224|      0|                    completion(WSError(type: .writeTimeoutError, message: "Timed out waiting for the socket to be ready for a write", code: 0))
   225|      0|                    return
-  226|  4.30k|                } else if let error = outStream.streamError {
+  226|  6.27k|                } else if let error = outStream.streamError {
   227|      0|                    completion(error)
   228|      0|                    return // disconnectStream will be called.
-  229|  4.30k|                } else if self == nil {
+  229|  6.27k|                } else if self == nil {
   230|      0|                    completion(WSError(type: .closeError, message: "socket object has been dereferenced", code: 0))
   231|      0|                    return
-  232|  4.30k|                }
-  233|  4.30k|            }
+  232|  6.27k|                }
+  233|  6.27k|            }
   234|      9|            completion(nil) //success!
   235|      9|        }
-  236|      9|    }
+  236|     10|    }
   237|       |    
   238|      8|    public func write(data: Data) -> Int {
   239|      8|        guard let outStream = outputStream else {return -1}
@@ -783,31 +783,31 @@
   241|      8|        return outStream.write(buffer, maxLength: data.count)
   242|      8|    }
   243|       |    
-  244|     14|    public func read() -> Data? {
-  245|     14|        guard let stream = inputStream else {return nil}
-  246|     14|        let buf = NSMutableData(capacity: BUFFER_MAX)
-  247|     14|        let buffer = UnsafeMutableRawPointer(mutating: buf!.bytes).assumingMemoryBound(to: UInt8.self)
-  248|     14|        let length = stream.read(buffer, maxLength: BUFFER_MAX)
-  249|     14|        if length < 1 {
+  244|     10|    public func read() -> Data? {
+  245|     10|        guard let stream = inputStream else {return nil}
+  246|     10|        let buf = NSMutableData(capacity: BUFFER_MAX)
+  247|     10|        let buffer = UnsafeMutableRawPointer(mutating: buf!.bytes).assumingMemoryBound(to: UInt8.self)
+  248|     10|        let length = stream.read(buffer, maxLength: BUFFER_MAX)
+  249|     10|        if length < 1 {
   250|      0|            return nil
-  251|     14|        }
-  252|     14|        return Data(bytes: buffer, count: length)
-  253|     14|    }
+  251|     10|        }
+  252|     10|        return Data(bytes: buffer, count: length)
+  253|     10|    }
   254|       |    
-  255|      9|    public func cleanup() {
-  256|      9|        if let stream = inputStream {
+  255|     10|    public func cleanup() {
+  256|     10|        if let stream = inputStream {
   257|      0|            stream.delegate = nil
   258|      0|            CFReadStreamSetDispatchQueue(stream, nil)
   259|      0|            stream.close()
-  260|      9|        }
-  261|      9|        if let stream = outputStream {
+  260|     10|        }
+  261|     10|        if let stream = outputStream {
   262|      0|            stream.delegate = nil
   263|      0|            CFWriteStreamSetDispatchQueue(stream, nil)
   264|      0|            stream.close()
-  265|      9|        }
-  266|      9|        outputStream = nil
-  267|      9|        inputStream = nil
-  268|      9|    }
+  265|     10|        }
+  266|     10|        outputStream = nil
+  267|     10|        inputStream = nil
+  268|     10|    }
   269|       |    
   270|       |    #if os(Linux) || os(watchOS)
   271|       |    #else
@@ -836,17 +836,17 @@
   294|       |    /**
   295|       |     Delegate for the stream methods. Processes incoming bytes
   296|       |     */
-  297|     41|    open func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
-  298|     41|        if eventCode == .hasBytesAvailable {
-  299|     14|            if aStream == inputStream {
-  300|     14|                delegate?.newBytesInStream()
-  301|     14|            }
-  302|     41|        } else if eventCode == .errorOccurred {
+  297|     39|    open func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
+  298|     39|        if eventCode == .hasBytesAvailable {
+  299|     10|            if aStream == inputStream {
+  300|     10|                delegate?.newBytesInStream()
+  301|     10|            }
+  302|     39|        } else if eventCode == .errorOccurred {
   303|      0|            delegate?.streamDidError(error: aStream.streamError)
-  304|     41|        } else if eventCode == .endEncountered {
+  304|     39|        } else if eventCode == .endEncountered {
   305|      0|            delegate?.streamDidError(error: nil)
-  306|     41|        }
-  307|     41|    }
+  306|     39|        }
+  307|     39|    }
   308|       |}
   309|       |
   310|       |//WebSocket implementation
@@ -924,9 +924,9 @@
   382|       |        var bytesLeft = 0
   383|       |        public var frameCount = 0
   384|       |        public var buffer: NSMutableData?
-  385|      7|        public let firstFrame = {
-  386|      7|            return Date()
-  387|      7|        }()
+  385|      4|        public let firstFrame = {
+  386|      4|            return Date()
+  387|      4|        }()
   388|       |    }
   389|       |
   390|       |    // MARK: - Delegates
@@ -997,37 +997,37 @@
   455|       |    private var didDisconnect = false
   456|       |    private var readyToWrite = false
   457|       |    private var headerSecKey = ""
-  458|     15|    private var canDispatch: Bool {
-  459|     15|        mutex.lock()
-  460|     15|        let canWork = readyToWrite
-  461|     15|        mutex.unlock()
-  462|     15|        return canWork
-  463|     15|    }
+  458|     10|    private var canDispatch: Bool {
+  459|     10|        mutex.lock()
+  460|     10|        let canWork = readyToWrite
+  461|     10|        mutex.unlock()
+  462|     10|        return canWork
+  463|     10|    }
   464|       |    
   465|       |    /// Used for setting protocols.
-  466|      9|    public init(request: URLRequest, protocols: [String]? = nil, stream: WSStream = FoundationStream()) {
-  467|      9|        self.request = request
-  468|      9|        self.stream = stream
-  469|      9|        if request.value(forHTTPHeaderField: headerOriginName) == nil {
-  470|      9|            guard let url = request.url else {return}
-  471|      9|            var origin = url.absoluteString
-  472|      9|            if let hostUrl = URL (string: "/", relativeTo: url) {
-  473|      9|                origin = hostUrl.absoluteString
-  474|      9|                origin.remove(at: origin.index(before: origin.endIndex))
-  475|      9|            }
-  476|      9|            self.request.setValue(origin, forHTTPHeaderField: headerOriginName)
-  477|      9|        }
-  478|      9|        if let protocols = protocols {
+  466|     10|    public init(request: URLRequest, protocols: [String]? = nil, stream: WSStream = FoundationStream()) {
+  467|     10|        self.request = request
+  468|     10|        self.stream = stream
+  469|     10|        if request.value(forHTTPHeaderField: headerOriginName) == nil {
+  470|     10|            guard let url = request.url else {return}
+  471|     10|            var origin = url.absoluteString
+  472|     10|            if let hostUrl = URL (string: "/", relativeTo: url) {
+  473|     10|                origin = hostUrl.absoluteString
+  474|     10|                origin.remove(at: origin.index(before: origin.endIndex))
+  475|     10|            }
+  476|     10|            self.request.setValue(origin, forHTTPHeaderField: headerOriginName)
+  477|     10|        }
+  478|     10|        if let protocols = protocols {
   479|      0|            self.request.setValue(protocols.joined(separator: ","), forHTTPHeaderField: headerWSProtocolName)
-  480|      9|        }
-  481|      9|        writeQueue.maxConcurrentOperationCount = 1
-  482|      9|    }
+  480|     10|        }
+  481|     10|        writeQueue.maxConcurrentOperationCount = 1
+  482|     10|    }
   483|       |    
-  484|      9|    public convenience init(url: URL, protocols: [String]? = nil) {
-  485|      9|        var request = URLRequest(url: url)
-  486|      9|        request.timeoutInterval = 5
-  487|      9|        self.init(request: request, protocols: protocols)
-  488|      9|    }
+  484|     10|    public convenience init(url: URL, protocols: [String]? = nil) {
+  485|     10|        var request = URLRequest(url: url)
+  486|     10|        request.timeoutInterval = 5
+  487|     10|        self.init(request: request, protocols: protocols)
+  488|     10|    }
   489|       |
   490|       |    // Used for specifically setting the QOS for the write queue.
   491|      0|    public convenience init(url: URL, writeQueueQOS: QualityOfService, protocols: [String]? = nil) {
@@ -1038,12 +1038,12 @@
   496|       |    /**
   497|       |     Connect to the WebSocket server on a background thread.
   498|       |     */
-  499|      9|    open func connect() {
-  500|      9|        guard !isConnecting else { return }
-  501|      9|        didDisconnect = false
-  502|      9|        isConnecting = true
-  503|      9|        createHTTPRequest()
-  504|      9|    }
+  499|     10|    open func connect() {
+  500|     10|        guard !isConnecting else { return }
+  501|     10|        didDisconnect = false
+  502|     10|        isConnecting = true
+  503|     10|        createHTTPRequest()
+  504|     10|    }
   505|       |
   506|       |    /**
   507|       |     Disconnect from the server. I send a Close control frame to the server, then expect the server to respond with a Close control frame and close the socket from its end. I notify my delegate once the socket has been closed.
@@ -1119,100 +1119,100 @@
   577|       |    /**
   578|       |     Private method that starts the connection.
   579|       |     */
-  580|      9|    private func createHTTPRequest() {
-  581|      9|        guard let url = request.url else {return}
-  582|      9|        var port = url.port
-  583|      9|        if port == nil {
-  584|      9|            if supportedSSLSchemes.contains(url.scheme!) {
-  585|      9|                port = 443
-  586|      9|            } else {
+  580|     10|    private func createHTTPRequest() {
+  581|     10|        guard let url = request.url else {return}
+  582|     10|        var port = url.port
+  583|     10|        if port == nil {
+  584|     10|            if supportedSSLSchemes.contains(url.scheme!) {
+  585|     10|                port = 443
+  586|     10|            } else {
   587|      0|                port = 80
-  588|      9|            }
-  589|      9|        }
-  590|      9|        request.setValue(headerWSUpgradeValue, forHTTPHeaderField: headerWSUpgradeName)
-  591|      9|        request.setValue(headerWSConnectionValue, forHTTPHeaderField: headerWSConnectionName)
-  592|      9|        headerSecKey = generateWebSocketKey()
-  593|      9|        request.setValue(headerWSVersionValue, forHTTPHeaderField: headerWSVersionName)
-  594|      9|        request.setValue(headerSecKey, forHTTPHeaderField: headerWSKeyName)
-  595|      9|        
-  596|      9|        if enableCompression {
-  597|      9|            let val = "permessage-deflate; client_max_window_bits; server_max_window_bits=15"
-  598|      9|            request.setValue(val, forHTTPHeaderField: headerWSExtensionName)
-  599|      9|        }
-  600|      9|        let hostValue = request.allHTTPHeaderFields?[headerWSHostName] ?? "\(url.host!):\(port!)"
-  601|      9|        request.setValue(hostValue, forHTTPHeaderField: headerWSHostName)
-  602|      9|
-  603|      9|        var path = url.absoluteString
-  604|      9|        let offset = (url.scheme?.count ?? 2) + 3
-  605|      9|        path = String(path[path.index(path.startIndex, offsetBy: offset)..<path.endIndex])
-  606|      9|        if let range = path.range(of: "/") {
-  607|      9|            path = String(path[range.lowerBound..<path.endIndex])
-  608|      9|        } else {
+  588|     10|            }
+  589|     10|        }
+  590|     10|        request.setValue(headerWSUpgradeValue, forHTTPHeaderField: headerWSUpgradeName)
+  591|     10|        request.setValue(headerWSConnectionValue, forHTTPHeaderField: headerWSConnectionName)
+  592|     10|        headerSecKey = generateWebSocketKey()
+  593|     10|        request.setValue(headerWSVersionValue, forHTTPHeaderField: headerWSVersionName)
+  594|     10|        request.setValue(headerSecKey, forHTTPHeaderField: headerWSKeyName)
+  595|     10|        
+  596|     10|        if enableCompression {
+  597|     10|            let val = "permessage-deflate; client_max_window_bits; server_max_window_bits=15"
+  598|     10|            request.setValue(val, forHTTPHeaderField: headerWSExtensionName)
+  599|     10|        }
+  600|     10|        let hostValue = request.allHTTPHeaderFields?[headerWSHostName] ?? "\(url.host!):\(port!)"
+  601|     10|        request.setValue(hostValue, forHTTPHeaderField: headerWSHostName)
+  602|     10|
+  603|     10|        var path = url.absoluteString
+  604|     10|        let offset = (url.scheme?.count ?? 2) + 3
+  605|     10|        path = String(path[path.index(path.startIndex, offsetBy: offset)..<path.endIndex])
+  606|     10|        if let range = path.range(of: "/") {
+  607|     10|            path = String(path[range.lowerBound..<path.endIndex])
+  608|     10|        } else {
   609|      0|            path = "/"
   610|      0|            if let query = url.query {
   611|      0|                path += "?" + query
   612|      0|            }
-  613|      9|        }
-  614|      9|        
-  615|      9|        var httpBody = "\(request.httpMethod ?? "GET") \(path) HTTP/1.1\r\n"
-  616|      9|        if let headers = request.allHTTPHeaderFields {
-  617|     63|            for (key, val) in headers {
-  618|     63|                httpBody += "\(key): \(val)\r\n"
-  619|     63|            }
-  620|      9|        }
-  621|      9|        httpBody += "\r\n"
-  622|      9|        
-  623|      9|        initStreamsWithData(httpBody.data(using: .utf8)!, Int(port!))
-  624|      9|        advancedDelegate?.websocketHttpUpgrade(socket: self, request: httpBody)
-  625|      9|    }
+  613|     10|        }
+  614|     10|        
+  615|     10|        var httpBody = "\(request.httpMethod ?? "GET") \(path) HTTP/1.1\r\n"
+  616|     10|        if let headers = request.allHTTPHeaderFields {
+  617|     70|            for (key, val) in headers {
+  618|     70|                httpBody += "\(key): \(val)\r\n"
+  619|     70|            }
+  620|     10|        }
+  621|     10|        httpBody += "\r\n"
+  622|     10|        
+  623|     10|        initStreamsWithData(httpBody.data(using: .utf8)!, Int(port!))
+  624|     10|        advancedDelegate?.websocketHttpUpgrade(socket: self, request: httpBody)
+  625|     10|    }
   626|       |
   627|       |    /**
   628|       |     Generate a WebSocket key as needed in RFC.
   629|       |     */
-  630|      9|    private func generateWebSocketKey() -> String {
-  631|      9|        var key = ""
-  632|      9|        let seed = 16
-  633|    144|        for _ in 0..<seed {
-  634|    144|            let uni = UnicodeScalar(UInt32(97 + arc4random_uniform(25)))
-  635|    144|            key += "\(Character(uni!))"
-  636|    144|        }
-  637|      9|        let data = key.data(using: String.Encoding.utf8)
-  638|      9|        let baseKey = data?.base64EncodedString(options: NSData.Base64EncodingOptions(rawValue: 0))
-  639|      9|        return baseKey!
-  640|      9|    }
+  630|     10|    private func generateWebSocketKey() -> String {
+  631|     10|        var key = ""
+  632|     10|        let seed = 16
+  633|    160|        for _ in 0..<seed {
+  634|    160|            let uni = UnicodeScalar(UInt32(97 + arc4random_uniform(25)))
+  635|    160|            key += "\(Character(uni!))"
+  636|    160|        }
+  637|     10|        let data = key.data(using: String.Encoding.utf8)
+  638|     10|        let baseKey = data?.base64EncodedString(options: NSData.Base64EncodingOptions(rawValue: 0))
+  639|     10|        return baseKey!
+  640|     10|    }
   641|       |
   642|       |    /**
   643|       |     Start the stream connection and write the data to the output stream.
   644|       |     */
-  645|      9|    private func initStreamsWithData(_ data: Data, _ port: Int) {
-  646|      9|
-  647|      9|        guard let url = request.url else {
+  645|     10|    private func initStreamsWithData(_ data: Data, _ port: Int) {
+  646|     10|
+  647|     10|        guard let url = request.url else {
   648|      0|            disconnectStream(nil, runDelegate: true)
   649|      0|            return
   650|      0|            
-  651|      9|        }
-  652|      9|        // Disconnect and clean up any existing streams before setting up a new pair
-  653|      9|        disconnectStream(nil, runDelegate: false)
-  654|      9|
-  655|      9|        let useSSL = supportedSSLSchemes.contains(url.scheme!)
-  656|      9|        #if os(Linux)
-  657|      9|            let settings = SSLSettings(useSSL: useSSL,
-  658|      9|                                       disableCertValidation: disableSSLCertValidation,
-  659|      9|                                       overrideTrustHostname: overrideTrustHostname,
-  660|      9|                                       desiredTrustHostname: desiredTrustHostname),
-  661|      9|                                       sslClientCertificate: sslClientCertificate
-  662|      9|        #else
-  663|      9|            let settings = SSLSettings(useSSL: useSSL,
-  664|      9|                                       disableCertValidation: disableSSLCertValidation,
-  665|      9|                                       overrideTrustHostname: overrideTrustHostname,
-  666|      9|                                       desiredTrustHostname: desiredTrustHostname,
-  667|      9|                                       sslClientCertificate: sslClientCertificate,
-  668|      9|                                       cipherSuites: self.enabledSSLCipherSuites)
-  669|      9|        #endif
-  670|      9|        certValidated = !useSSL
-  671|      9|        let timeout = request.timeoutInterval * 1_000_000
-  672|      9|        stream.delegate = self
-  673|      9|        stream.connect(url: url, port: port, timeout: timeout, ssl: settings, completion: { [weak self] (error) in
+  651|     10|        }
+  652|     10|        // Disconnect and clean up any existing streams before setting up a new pair
+  653|     10|        disconnectStream(nil, runDelegate: false)
+  654|     10|
+  655|     10|        let useSSL = supportedSSLSchemes.contains(url.scheme!)
+  656|     10|        #if os(Linux)
+  657|     10|            let settings = SSLSettings(useSSL: useSSL,
+  658|     10|                                       disableCertValidation: disableSSLCertValidation,
+  659|     10|                                       overrideTrustHostname: overrideTrustHostname,
+  660|     10|                                       desiredTrustHostname: desiredTrustHostname),
+  661|     10|                                       sslClientCertificate: sslClientCertificate
+  662|     10|        #else
+  663|     10|            let settings = SSLSettings(useSSL: useSSL,
+  664|     10|                                       disableCertValidation: disableSSLCertValidation,
+  665|     10|                                       overrideTrustHostname: overrideTrustHostname,
+  666|     10|                                       desiredTrustHostname: desiredTrustHostname,
+  667|     10|                                       sslClientCertificate: sslClientCertificate,
+  668|     10|                                       cipherSuites: self.enabledSSLCipherSuites)
+  669|     10|        #endif
+  670|     10|        certValidated = !useSSL
+  671|     10|        let timeout = request.timeoutInterval * 1_000_000
+  672|     10|        stream.delegate = self
+  673|     10|        stream.connect(url: url, port: port, timeout: timeout, ssl: settings, completion: { [weak self] (error) in
   674|      8|            guard let self = self else {return}
   675|      8|            if error != nil {
   676|      0|                self.disconnectStream(error)
@@ -1243,19 +1243,19 @@
   701|      8|            }
   702|      8|            self.writeQueue.addOperation(operation)
   703|      8|        })
-  704|      9|
-  705|      9|        self.mutex.lock()
-  706|      9|        self.readyToWrite = true
-  707|      9|        self.mutex.unlock()
-  708|      9|    }
+  704|     10|
+  705|     10|        self.mutex.lock()
+  706|     10|        self.readyToWrite = true
+  707|     10|        self.mutex.unlock()
+  708|     10|    }
   709|       |
   710|       |    /**
   711|       |     Delegate for the stream methods. Processes incoming bytes
   712|       |     */
   713|       |    
-  714|     14|    public func newBytesInStream() {
-  715|     14|        processInputStream()
-  716|     14|    }
+  714|     10|    public func newBytesInStream() {
+  715|     10|        processInputStream()
+  716|     10|    }
   717|       |    
   718|      0|    public func streamDidError(error: Error?) {
   719|      0|        disconnectStream(error)
@@ -1264,183 +1264,183 @@
   722|       |    /**
   723|       |     Disconnect the stream object and notifies the delegate.
   724|       |     */
-  725|      9|    private func disconnectStream(_ error: Error?, runDelegate: Bool = true) {
-  726|      9|        if error == nil {
-  727|      9|            writeQueue.waitUntilAllOperationsAreFinished()
-  728|      9|        } else {
+  725|     10|    private func disconnectStream(_ error: Error?, runDelegate: Bool = true) {
+  726|     10|        if error == nil {
+  727|     10|            writeQueue.waitUntilAllOperationsAreFinished()
+  728|     10|        } else {
   729|      0|            writeQueue.cancelAllOperations()
-  730|      9|        }
-  731|      9|        
-  732|      9|        mutex.lock()
-  733|      9|        cleanupStream()
-  734|      9|        connected = false
-  735|      9|        mutex.unlock()
-  736|      9|        if runDelegate {
+  730|     10|        }
+  731|     10|        
+  732|     10|        mutex.lock()
+  733|     10|        cleanupStream()
+  734|     10|        connected = false
+  735|     10|        mutex.unlock()
+  736|     10|        if runDelegate {
   737|      0|            doDisconnect(error)
-  738|      9|        }
-  739|      9|    }
+  738|     10|        }
+  739|     10|    }
   740|       |
   741|       |    /**
   742|       |     cleanup the streams.
   743|       |     */
-  744|      9|    private func cleanupStream() {
-  745|      9|        stream.cleanup()
-  746|      9|        fragBuffer = nil
-  747|      9|    }
+  744|     10|    private func cleanupStream() {
+  745|     10|        stream.cleanup()
+  746|     10|        fragBuffer = nil
+  747|     10|    }
   748|       |
   749|       |    /**
   750|       |     Handles the incoming bytes and sending them to the proper processing method.
   751|       |     */
-  752|     14|    private func processInputStream() {
-  753|     14|        let data = stream.read()
-  754|     14|        guard let d = data else { return }
-  755|     14|        var process = false
-  756|     14|        if inputQueue.count == 0 {
-  757|     14|            process = true
-  758|     14|        }
-  759|     14|        inputQueue.append(d)
-  760|     14|        if process {
-  761|     14|            dequeueInput()
-  762|     14|        }
-  763|     14|    }
+  752|     10|    private func processInputStream() {
+  753|     10|        let data = stream.read()
+  754|     10|        guard let d = data else { return }
+  755|     10|        var process = false
+  756|     10|        if inputQueue.count == 0 {
+  757|     10|            process = true
+  758|     10|        }
+  759|     10|        inputQueue.append(d)
+  760|     10|        if process {
+  761|     10|            dequeueInput()
+  762|     10|        }
+  763|     10|    }
   764|       |
   765|       |    /**
   766|       |     Dequeue the incoming input so it is processed in order.
   767|       |     */
-  768|     14|    private func dequeueInput() {
-  769|     28|        while !inputQueue.isEmpty {
-  770|     14|            autoreleasepool {
-  771|     14|                let data = inputQueue[0]
-  772|     14|                var work = data
-  773|     14|                if let buffer = fragBuffer {
+  768|     10|    private func dequeueInput() {
+  769|     20|        while !inputQueue.isEmpty {
+  770|     10|            autoreleasepool {
+  771|     10|                let data = inputQueue[0]
+  772|     10|                var work = data
+  773|     10|                if let buffer = fragBuffer {
   774|      0|                    var combine = NSData(data: buffer) as Data
   775|      0|                    combine.append(data)
   776|      0|                    work = combine
   777|      0|                    fragBuffer = nil
-  778|     14|                }
-  779|     14|                let buffer = UnsafeRawPointer((work as NSData).bytes).assumingMemoryBound(to: UInt8.self)
-  780|     14|                let length = work.count
-  781|     14|                if !connected {
-  782|      8|                    processTCPHandshake(buffer, bufferLen: length)
-  783|     14|                } else {
-  784|      6|                    processRawMessagesInBuffer(buffer, bufferLen: length)
-  785|     14|                }
-  786|     14|                inputQueue = inputQueue.filter{ $0 != data }
-  787|     14|            }
-  788|     14|        }
-  789|     14|    }
+  778|     10|                }
+  779|     10|                let buffer = UnsafeRawPointer((work as NSData).bytes).assumingMemoryBound(to: UInt8.self)
+  780|     10|                let length = work.count
+  781|     10|                if !connected {
+  782|      6|                    processTCPHandshake(buffer, bufferLen: length)
+  783|     10|                } else {
+  784|      4|                    processRawMessagesInBuffer(buffer, bufferLen: length)
+  785|     10|                }
+  786|     10|                inputQueue = inputQueue.filter{ $0 != data }
+  787|     10|            }
+  788|     10|        }
+  789|     10|    }
   790|       |
   791|       |    /**
   792|       |     Handle checking the inital connection status
   793|       |     */
-  794|      8|    private func processTCPHandshake(_ buffer: UnsafePointer<UInt8>, bufferLen: Int) {
-  795|      8|        let code = processHTTP(buffer, bufferLen: bufferLen)
-  796|      8|        switch code {
-  797|      8|        case 0:
-  798|      8|            break
-  799|      8|        case -1:
+  794|      6|    private func processTCPHandshake(_ buffer: UnsafePointer<UInt8>, bufferLen: Int) {
+  795|      6|        let code = processHTTP(buffer, bufferLen: bufferLen)
+  796|      6|        switch code {
+  797|      6|        case 0:
+  798|      6|            break
+  799|      6|        case -1:
   800|      0|            fragBuffer = Data(bytes: buffer, count: bufferLen)
   801|      0|            break // do nothing, we are going to collect more data
-  802|      8|        default:
+  802|      6|        default:
   803|      0|            doDisconnect(WSError(type: .upgradeError, message: "Invalid HTTP upgrade", code: code))
-  804|      8|        }
-  805|      8|    }
+  804|      6|        }
+  805|      6|    }
   806|       |
   807|       |    /**
   808|       |     Finds the HTTP Packet in the TCP stream, by looking for the CRLF.
   809|       |     */
-  810|      8|    private func processHTTP(_ buffer: UnsafePointer<UInt8>, bufferLen: Int) -> Int {
-  811|      8|        let CRLFBytes = [UInt8(ascii: "\r"), UInt8(ascii: "\n"), UInt8(ascii: "\r"), UInt8(ascii: "\n")]
-  812|      8|        var k = 0
-  813|      8|        var totalSize = 0
-  814|  1.33k|        for i in 0..<bufferLen {
-  815|  1.33k|            if buffer[i] == CRLFBytes[k] {
-  816|     96|                k += 1
-  817|     96|                if k == 4 {
-  818|      8|                    totalSize = i + 1
-  819|      8|                    break
-  820|     88|                }
-  821|  1.32k|            } else {
-  822|  1.24k|                k = 0
-  823|  1.32k|            }
-  824|  1.32k|        }
-  825|      8|        if totalSize > 0 {
-  826|      8|            let code = validateResponse(buffer, bufferLen: totalSize)
-  827|      8|            if code != 0 {
+  810|      6|    private func processHTTP(_ buffer: UnsafePointer<UInt8>, bufferLen: Int) -> Int {
+  811|      6|        let CRLFBytes = [UInt8(ascii: "\r"), UInt8(ascii: "\n"), UInt8(ascii: "\r"), UInt8(ascii: "\n")]
+  812|      6|        var k = 0
+  813|      6|        var totalSize = 0
+  814|  1.00k|        for i in 0..<bufferLen {
+  815|  1.00k|            if buffer[i] == CRLFBytes[k] {
+  816|     72|                k += 1
+  817|     72|                if k == 4 {
+  818|      6|                    totalSize = i + 1
+  819|      6|                    break
+  820|     66|                }
+  821|    996|            } else {
+  822|    930|                k = 0
+  823|    996|            }
+  824|    996|        }
+  825|      6|        if totalSize > 0 {
+  826|      6|            let code = validateResponse(buffer, bufferLen: totalSize)
+  827|      6|            if code != 0 {
   828|      0|                return code
-  829|      8|            }
-  830|      8|            isConnecting = false
-  831|      8|            mutex.lock()
-  832|      8|            connected = true
-  833|      8|            mutex.unlock()
-  834|      8|            didDisconnect = false
-  835|      8|            if canDispatch {
-  836|      8|                callbackQueue.async { [weak self] in
-  837|      8|                    guard let self = self else { return }
-  838|      8|                    self.onConnect?()
-  839|      8|                    self.delegate?.websocketDidConnect(socket: self)
-  840|      8|                    self.advancedDelegate?.websocketDidConnect(socket: self)
-  841|      8|                    NotificationCenter.default.post(name: NSNotification.Name(WebsocketDidConnectNotification), object: self)
-  842|      8|                }
-  843|      8|            }
-  844|      8|            //totalSize += 1 //skip the last \n
-  845|      8|            let restSize = bufferLen - totalSize
-  846|      8|            if restSize > 0 {
-  847|      1|                processRawMessagesInBuffer(buffer + totalSize, bufferLen: restSize)
-  848|      8|            }
-  849|      8|            return 0 //success
-  850|      8|        }
+  829|      6|            }
+  830|      6|            isConnecting = false
+  831|      6|            mutex.lock()
+  832|      6|            connected = true
+  833|      6|            mutex.unlock()
+  834|      6|            didDisconnect = false
+  835|      6|            if canDispatch {
+  836|      6|                callbackQueue.async { [weak self] in
+  837|      6|                    guard let self = self else { return }
+  838|      6|                    self.onConnect?()
+  839|      6|                    self.delegate?.websocketDidConnect(socket: self)
+  840|      6|                    self.advancedDelegate?.websocketDidConnect(socket: self)
+  841|      6|                    NotificationCenter.default.post(name: NSNotification.Name(WebsocketDidConnectNotification), object: self)
+  842|      6|                }
+  843|      6|            }
+  844|      6|            //totalSize += 1 //skip the last \n
+  845|      6|            let restSize = bufferLen - totalSize
+  846|      6|            if restSize > 0 {
+  847|      0|                processRawMessagesInBuffer(buffer + totalSize, bufferLen: restSize)
+  848|      6|            }
+  849|      6|            return 0 //success
+  850|      6|        }
   851|      0|        return -1 // Was unable to find the full TCP header.
-  852|      8|    }
+  852|      6|    }
   853|       |
   854|       |    /**
   855|       |     Validates the HTTP is a 101 as per the RFC spec.
   856|       |     */
-  857|      8|    private func validateResponse(_ buffer: UnsafePointer<UInt8>, bufferLen: Int) -> Int {
-  858|      8|        guard let str = String(data: Data(bytes: buffer, count: bufferLen), encoding: .utf8) else { return -1 }
-  859|      8|        let splitArr = str.components(separatedBy: "\r\n")
-  860|      8|        var code = -1
-  861|      8|        var i = 0
-  862|      8|        var headers = [String: String]()
-  863|     48|        for str in splitArr {
-  864|     48|            if i == 0 {
-  865|      8|                let responseSplit = str.components(separatedBy: .whitespaces)
-  866|      8|                guard responseSplit.count > 1 else { return -1 }
-  867|      8|                if let c = Int(responseSplit[1]) {
-  868|      8|                    code = c
-  869|      8|                }
-  870|     48|            } else {
-  871|     40|                let responseSplit = str.components(separatedBy: ":")
-  872|     40|                guard responseSplit.count > 1 else { break }
-  873|     32|                let key = responseSplit[0].trimmingCharacters(in: .whitespaces)
-  874|     32|                let val = responseSplit[1].trimmingCharacters(in: .whitespaces)
-  875|     32|                headers[key.lowercased()] = val
-  876|     40|            }
-  877|     40|            i += 1
-  878|     40|        }
-  879|      8|        advancedDelegate?.websocketHttpUpgrade(socket: self, response: str)
-  880|      8|        onHttpResponseHeaders?(headers)
-  881|      8|        if code != httpSwitchProtocolCode {
+  857|      6|    private func validateResponse(_ buffer: UnsafePointer<UInt8>, bufferLen: Int) -> Int {
+  858|      6|        guard let str = String(data: Data(bytes: buffer, count: bufferLen), encoding: .utf8) else { return -1 }
+  859|      6|        let splitArr = str.components(separatedBy: "\r\n")
+  860|      6|        var code = -1
+  861|      6|        var i = 0
+  862|      6|        var headers = [String: String]()
+  863|     36|        for str in splitArr {
+  864|     36|            if i == 0 {
+  865|      6|                let responseSplit = str.components(separatedBy: .whitespaces)
+  866|      6|                guard responseSplit.count > 1 else { return -1 }
+  867|      6|                if let c = Int(responseSplit[1]) {
+  868|      6|                    code = c
+  869|      6|                }
+  870|     36|            } else {
+  871|     30|                let responseSplit = str.components(separatedBy: ":")
+  872|     30|                guard responseSplit.count > 1 else { break }
+  873|     24|                let key = responseSplit[0].trimmingCharacters(in: .whitespaces)
+  874|     24|                let val = responseSplit[1].trimmingCharacters(in: .whitespaces)
+  875|     24|                headers[key.lowercased()] = val
+  876|     30|            }
+  877|     30|            i += 1
+  878|     30|        }
+  879|      6|        advancedDelegate?.websocketHttpUpgrade(socket: self, response: str)
+  880|      6|        onHttpResponseHeaders?(headers)
+  881|      6|        if code != httpSwitchProtocolCode {
   882|      0|            return code
-  883|      8|        }
-  884|      8|        
-  885|      8|        if let extensionHeader = headers[headerWSExtensionName.lowercased()] {
+  883|      6|        }
+  884|      6|        
+  885|      6|        if let extensionHeader = headers[headerWSExtensionName.lowercased()] {
   886|      0|            processExtensionHeader(extensionHeader)
-  887|      8|        }
-  888|      8|        
-  889|      8|        if let acceptKey = headers[headerWSAcceptName.lowercased()] {
-  890|      8|            if acceptKey.count > 0 {
-  891|      8|                if headerSecKey.count > 0 {
-  892|      8|                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha1Base64()
-  893|      8|                    if sha != acceptKey as String {
+  887|      6|        }
+  888|      6|        
+  889|      6|        if let acceptKey = headers[headerWSAcceptName.lowercased()] {
+  890|      6|            if acceptKey.count > 0 {
+  891|      6|                if headerSecKey.count > 0 {
+  892|      6|                    let sha = "\(headerSecKey)258EAFA5-E914-47DA-95CA-C5AB0DC85B11".sha1Base64()
+  893|      6|                    if sha != acceptKey as String {
   894|      0|                        return -1
-  895|      8|                    }
-  896|      8|                }
-  897|      8|                return 0
-  898|      8|            }
+  895|      6|                    }
+  896|      6|                }
+  897|      6|                return 0
+  898|      6|            }
   899|      0|        }
   900|      0|        return -1
-  901|      8|    }
+  901|      6|    }
   902|       |
   903|       |    /**
   904|       |     Parses the extension header, setting up the compression parameters.
@@ -1511,15 +1511,15 @@
   969|       |    /**
   970|       |     Process one message at the start of `buffer`. Return another buffer (sharing storage) that contains the leftover contents of `buffer` that I didn't process.
   971|       |     */
-  972|      7|    private func processOneRawMessage(inBuffer buffer: UnsafeBufferPointer<UInt8>) -> UnsafeBufferPointer<UInt8> {
-  973|      7|        let response = readStack.last
-  974|      7|        guard let baseAddress = buffer.baseAddress else {return emptyBuffer}
-  975|      7|        let bufferLen = buffer.count
-  976|      7|        if response != nil && bufferLen < 2 {
+  972|      4|    private func processOneRawMessage(inBuffer buffer: UnsafeBufferPointer<UInt8>) -> UnsafeBufferPointer<UInt8> {
+  973|      4|        let response = readStack.last
+  974|      4|        guard let baseAddress = buffer.baseAddress else {return emptyBuffer}
+  975|      4|        let bufferLen = buffer.count
+  976|      4|        if response != nil && bufferLen < 2 {
   977|      0|            fragBuffer = Data(buffer: buffer)
   978|      0|            return emptyBuffer
-  979|      7|        }
-  980|      7|        if let response = response, response.bytesLeft > 0 {
+  979|      4|        }
+  980|      4|        if let response = response, response.bytesLeft > 0 {
   981|      0|            var len = response.bytesLeft
   982|      0|            var extra = bufferLen - response.bytesLeft
   983|      0|            if response.bytesLeft > bufferLen {
@@ -1530,38 +1530,38 @@
   988|      0|            response.buffer?.append(Data(bytes: baseAddress, count: len))
   989|      0|            _ = processResponse(response)
   990|      0|            return buffer.fromOffset(bufferLen - extra)
-  991|      7|        } else {
-  992|      7|            let isFin = (FinMask & baseAddress[0])
-  993|      7|            let receivedOpcodeRawValue = (OpCodeMask & baseAddress[0])
-  994|      7|            let receivedOpcode = OpCode(rawValue: receivedOpcodeRawValue)
-  995|      7|            let isMasked = (MaskMask & baseAddress[1])
-  996|      7|            let payloadLen = (PayloadLenMask & baseAddress[1])
-  997|      7|            var offset = 2
-  998|      7|            if compressionState.supportsCompression && receivedOpcode != .continueFrame {
+  991|      4|        } else {
+  992|      4|            let isFin = (FinMask & baseAddress[0])
+  993|      4|            let receivedOpcodeRawValue = (OpCodeMask & baseAddress[0])
+  994|      4|            let receivedOpcode = OpCode(rawValue: receivedOpcodeRawValue)
+  995|      4|            let isMasked = (MaskMask & baseAddress[1])
+  996|      4|            let payloadLen = (PayloadLenMask & baseAddress[1])
+  997|      4|            var offset = 2
+  998|      4|            if compressionState.supportsCompression && receivedOpcode != .continueFrame {
   999|      0|                compressionState.messageNeedsDecompression = (RSV1Mask & baseAddress[0]) > 0
- 1000|      7|            }
- 1001|      7|            if (isMasked > 0 || (RSVMask & baseAddress[0]) > 0) && receivedOpcode != .pong && !compressionState.messageNeedsDecompression {
+ 1000|      4|            }
+ 1001|      4|            if (isMasked > 0 || (RSVMask & baseAddress[0]) > 0) && receivedOpcode != .pong && !compressionState.messageNeedsDecompression {
  1002|      0|                let errCode = CloseCode.protocolError.rawValue
  1003|      0|                doDisconnect(WSError(type: .protocolError, message: "masked and rsv data is not currently supported", code: Int(errCode)))
  1004|      0|                writeError(errCode)
  1005|      0|                return emptyBuffer
- 1006|      7|            }
- 1007|      7|            let isControlFrame = (receivedOpcode == .connectionClose || receivedOpcode == .ping)
- 1008|      7|            if !isControlFrame && (receivedOpcode != .binaryFrame && receivedOpcode != .continueFrame &&
- 1009|      7|                receivedOpcode != .textFrame && receivedOpcode != .pong) {
+ 1006|      4|            }
+ 1007|      4|            let isControlFrame = (receivedOpcode == .connectionClose || receivedOpcode == .ping)
+ 1008|      4|            if !isControlFrame && (receivedOpcode != .binaryFrame && receivedOpcode != .continueFrame &&
+ 1009|      4|                receivedOpcode != .textFrame && receivedOpcode != .pong) {
  1010|      0|                    let errCode = CloseCode.protocolError.rawValue
  1011|      0|                    doDisconnect(WSError(type: .protocolError, message: "unknown opcode: \(receivedOpcodeRawValue)", code: Int(errCode)))
  1012|      0|                    writeError(errCode)
  1013|      0|                    return emptyBuffer
- 1014|      7|            }
- 1015|      7|            if isControlFrame && isFin == 0 {
+ 1014|      4|            }
+ 1015|      4|            if isControlFrame && isFin == 0 {
  1016|      0|                let errCode = CloseCode.protocolError.rawValue
  1017|      0|                doDisconnect(WSError(type: .protocolError, message: "control frames can't be fragmented", code: Int(errCode)))
  1018|      0|                writeError(errCode)
  1019|      0|                return emptyBuffer
- 1020|      7|            }
- 1021|      7|            var closeCode = CloseCode.normal.rawValue
- 1022|      7|            if receivedOpcode == .connectionClose {
+ 1020|      4|            }
+ 1021|      4|            var closeCode = CloseCode.normal.rawValue
+ 1022|      4|            if receivedOpcode == .connectionClose {
  1023|      0|                if payloadLen == 1 {
  1024|      0|                    closeCode = CloseCode.protocolError.rawValue
  1025|      0|                } else if payloadLen > 1 {
@@ -1575,33 +1575,33 @@
  1033|      0|                    writeError(closeCode)
  1034|      0|                    return emptyBuffer
  1035|      0|                }
- 1036|      7|            } else if isControlFrame && payloadLen > 125 {
+ 1036|      4|            } else if isControlFrame && payloadLen > 125 {
  1037|      0|                writeError(CloseCode.protocolError.rawValue)
  1038|      0|                return emptyBuffer
- 1039|      7|            }
- 1040|      7|            var dataLength = UInt64(payloadLen)
- 1041|      7|            if dataLength == 127 {
+ 1039|      4|            }
+ 1040|      4|            var dataLength = UInt64(payloadLen)
+ 1041|      4|            if dataLength == 127 {
  1042|      0|                dataLength = WebSocket.readUint64(baseAddress, offset: offset)
  1043|      0|                offset += MemoryLayout<UInt64>.size
- 1044|      7|            } else if dataLength == 126 {
+ 1044|      4|            } else if dataLength == 126 {
  1045|      0|                dataLength = UInt64(WebSocket.readUint16(baseAddress, offset: offset))
  1046|      0|                offset += MemoryLayout<UInt16>.size
- 1047|      7|            }
- 1048|      7|            if bufferLen < offset || UInt64(bufferLen - offset) < dataLength {
+ 1047|      4|            }
+ 1048|      4|            if bufferLen < offset || UInt64(bufferLen - offset) < dataLength {
  1049|      0|                fragBuffer = Data(bytes: baseAddress, count: bufferLen)
  1050|      0|                return emptyBuffer
- 1051|      7|            }
- 1052|      7|            var len = dataLength
- 1053|      7|            if dataLength > UInt64(bufferLen) {
+ 1051|      4|            }
+ 1052|      4|            var len = dataLength
+ 1053|      4|            if dataLength > UInt64(bufferLen) {
  1054|      0|                len = UInt64(bufferLen-offset)
- 1055|      7|            }
- 1056|      7|            if receivedOpcode == .connectionClose && len > 0 {
+ 1055|      4|            }
+ 1056|      4|            if receivedOpcode == .connectionClose && len > 0 {
  1057|      0|                let size = MemoryLayout<UInt16>.size
  1058|      0|                offset += size
  1059|      0|                len -= UInt64(size)
- 1060|      7|            }
- 1061|      7|            let data: Data
- 1062|      7|            if compressionState.messageNeedsDecompression, let decompressor = compressionState.decompressor {
+ 1060|      4|            }
+ 1061|      4|            let data: Data
+ 1062|      4|            if compressionState.messageNeedsDecompression, let decompressor = compressionState.decompressor {
  1063|      0|                do {
  1064|      0|                    data = try decompressor.decompress(bytes: baseAddress+offset, count: Int(len), finish: isFin > 0)
  1065|      0|                    if isFin > 0 && compressionState.serverNoContextTakeover {
@@ -1614,11 +1614,11 @@
  1072|      0|                    writeError(closeCode)
  1073|      0|                    return emptyBuffer
  1074|      0|                }
- 1075|      7|            } else {
- 1076|      7|                data = Data(bytes: baseAddress+offset, count: Int(len))
- 1077|      7|            }
- 1078|      7|
- 1079|      7|            if receivedOpcode == .connectionClose {
+ 1075|      4|            } else {
+ 1076|      4|                data = Data(bytes: baseAddress+offset, count: Int(len))
+ 1077|      4|            }
+ 1078|      4|
+ 1079|      4|            if receivedOpcode == .connectionClose {
  1080|      0|                var closeReason = "connection closed by server"
  1081|      0|                if let customCloseReason = String(data: data, encoding: .utf8) {
  1082|      0|                    closeReason = customCloseReason
@@ -1628,8 +1628,8 @@
  1086|      0|                doDisconnect(WSError(type: .protocolError, message: closeReason, code: Int(closeCode)))
  1087|      0|                writeError(closeCode)
  1088|      0|                return emptyBuffer
- 1089|      7|            }
- 1090|      7|            if receivedOpcode == .pong {
+ 1089|      4|            }
+ 1090|      4|            if receivedOpcode == .pong {
  1091|      0|                if canDispatch {
  1092|      0|                    callbackQueue.async { [weak self] in
  1093|      0|                        guard let self = self else { return }
@@ -1639,31 +1639,31 @@
  1097|      0|                    }
  1098|      0|                }
  1099|      0|                return buffer.fromOffset(offset + Int(len))
- 1100|      7|            }
- 1101|      7|            var response = readStack.last
- 1102|      7|            if isControlFrame {
+ 1100|      4|            }
+ 1101|      4|            var response = readStack.last
+ 1102|      4|            if isControlFrame {
  1103|      0|                response = nil // Don't append pings.
- 1104|      7|            }
- 1105|      7|            if isFin == 0 && receivedOpcode == .continueFrame && response == nil {
+ 1104|      4|            }
+ 1105|      4|            if isFin == 0 && receivedOpcode == .continueFrame && response == nil {
  1106|      0|                let errCode = CloseCode.protocolError.rawValue
  1107|      0|                doDisconnect(WSError(type: .protocolError, message: "continue frame before a binary or text frame", code: Int(errCode)))
  1108|      0|                writeError(errCode)
  1109|      0|                return emptyBuffer
- 1110|      7|            }
- 1111|      7|            var isNew = false
- 1112|      7|            if response == nil {
- 1113|      7|                if receivedOpcode == .continueFrame {
+ 1110|      4|            }
+ 1111|      4|            var isNew = false
+ 1112|      4|            if response == nil {
+ 1113|      4|                if receivedOpcode == .continueFrame {
  1114|      0|                    let errCode = CloseCode.protocolError.rawValue
  1115|      0|                    doDisconnect(WSError(type: .protocolError, message: "first frame can't be a continue frame", code: Int(errCode)))
  1116|      0|                    writeError(errCode)
  1117|      0|                    return emptyBuffer
- 1118|      7|                }
- 1119|      7|                isNew = true
- 1120|      7|                response = WSResponse()
- 1121|      7|                response!.code = receivedOpcode!
- 1122|      7|                response!.bytesLeft = Int(dataLength)
- 1123|      7|                response!.buffer = NSMutableData(data: data)
- 1124|      7|            } else {
+ 1118|      4|                }
+ 1119|      4|                isNew = true
+ 1120|      4|                response = WSResponse()
+ 1121|      4|                response!.code = receivedOpcode!
+ 1122|      4|                response!.bytesLeft = Int(dataLength)
+ 1123|      4|                response!.buffer = NSMutableData(data: data)
+ 1124|      4|            } else {
  1125|      0|                if receivedOpcode == .continueFrame {
  1126|      0|                    response!.bytesLeft = Int(dataLength)
  1127|      0|                } else {
@@ -1673,59 +1673,59 @@
  1131|      0|                    return emptyBuffer
  1132|      0|                }
  1133|      0|                response!.buffer!.append(data)
- 1134|      7|            }
- 1135|      7|            if let response = response {
- 1136|      7|                response.bytesLeft -= Int(len)
- 1137|      7|                response.frameCount += 1
- 1138|      7|                response.isFin = isFin > 0 ? true : false
- 1139|      7|                if isNew {
- 1140|      7|                    readStack.append(response)
- 1141|      7|                }
- 1142|      7|                _ = processResponse(response)
- 1143|      7|            }
- 1144|      7|
- 1145|      7|            let step = Int(offset + numericCast(len))
- 1146|      7|            return buffer.fromOffset(step)
- 1147|      7|        }
+ 1134|      4|            }
+ 1135|      4|            if let response = response {
+ 1136|      4|                response.bytesLeft -= Int(len)
+ 1137|      4|                response.frameCount += 1
+ 1138|      4|                response.isFin = isFin > 0 ? true : false
+ 1139|      4|                if isNew {
+ 1140|      4|                    readStack.append(response)
+ 1141|      4|                }
+ 1142|      4|                _ = processResponse(response)
+ 1143|      4|            }
+ 1144|      4|
+ 1145|      4|            let step = Int(offset + numericCast(len))
+ 1146|      4|            return buffer.fromOffset(step)
+ 1147|      4|        }
  1148|      0|    }
  1149|       |
  1150|       |    /**
  1151|       |     Process all messages in the buffer if possible.
  1152|       |     */
- 1153|      7|    private func processRawMessagesInBuffer(_ pointer: UnsafePointer<UInt8>, bufferLen: Int) {
- 1154|      7|        var buffer = UnsafeBufferPointer(start: pointer, count: bufferLen)
- 1155|      7|        repeat {
- 1156|      7|            buffer = processOneRawMessage(inBuffer: buffer)
- 1157|      7|        } while buffer.count >= 2
- 1158|      7|        if buffer.count > 0 {
+ 1153|      4|    private func processRawMessagesInBuffer(_ pointer: UnsafePointer<UInt8>, bufferLen: Int) {
+ 1154|      4|        var buffer = UnsafeBufferPointer(start: pointer, count: bufferLen)
+ 1155|      4|        repeat {
+ 1156|      4|            buffer = processOneRawMessage(inBuffer: buffer)
+ 1157|      4|        } while buffer.count >= 2
+ 1158|      4|        if buffer.count > 0 {
  1159|      0|            fragBuffer = Data(buffer: buffer)
- 1160|      7|        }
- 1161|      7|    }
+ 1160|      4|        }
+ 1161|      4|    }
  1162|       |
  1163|       |    /**
  1164|       |     Process the finished response of a buffer.
  1165|       |     */
- 1166|      7|    private func processResponse(_ response: WSResponse) -> Bool {
- 1167|      7|        if response.isFin && response.bytesLeft <= 0 {
- 1168|      7|            if response.code == .ping {
+ 1166|      4|    private func processResponse(_ response: WSResponse) -> Bool {
+ 1167|      4|        if response.isFin && response.bytesLeft <= 0 {
+ 1168|      4|            if response.code == .ping {
  1169|      0|                if respondToPingWithPong {
  1170|      0|                    let data = response.buffer! // local copy so it is perverse for writing
  1171|      0|                    dequeueWrite(data as Data, code: .pong)
  1172|      0|                }
- 1173|      7|            } else if response.code == .textFrame {
- 1174|      7|                guard let str = String(data: response.buffer! as Data, encoding: .utf8) else {
+ 1173|      4|            } else if response.code == .textFrame {
+ 1174|      4|                guard let str = String(data: response.buffer! as Data, encoding: .utf8) else {
  1175|      0|                    writeError(CloseCode.encoding.rawValue)
  1176|      0|                    return false
- 1177|      7|                }
- 1178|      7|                if canDispatch {
- 1179|      7|                    callbackQueue.async { [weak self] in
- 1180|      7|                        guard let self = self else { return }
- 1181|      7|                        self.onText?(str)
- 1182|      7|                        self.delegate?.websocketDidReceiveMessage(socket: self, text: str)
- 1183|      7|                        self.advancedDelegate?.websocketDidReceiveMessage(socket: self, text: str, response: response)
- 1184|      7|                    }
- 1185|      7|                }
- 1186|      7|            } else if response.code == .binaryFrame {
+ 1177|      4|                }
+ 1178|      4|                if canDispatch {
+ 1179|      4|                    callbackQueue.async { [weak self] in
+ 1180|      4|                        guard let self = self else { return }
+ 1181|      4|                        self.onText?(str)
+ 1182|      4|                        self.delegate?.websocketDidReceiveMessage(socket: self, text: str)
+ 1183|      4|                        self.advancedDelegate?.websocketDidReceiveMessage(socket: self, text: str, response: response)
+ 1184|      4|                    }
+ 1185|      4|                }
+ 1186|      4|            } else if response.code == .binaryFrame {
  1187|      0|                if canDispatch {
  1188|      0|                    let data = response.buffer! // local copy so it is perverse for writing
  1189|      0|                    callbackQueue.async { [weak self] in
@@ -1735,12 +1735,12 @@
  1193|      0|                        self.advancedDelegate?.websocketDidReceiveData(socket: self, data: data as Data, response: response)
  1194|      0|                    }
  1195|      0|                }
- 1196|      7|            }
- 1197|      7|            readStack.removeLast()
- 1198|      7|            return true
- 1199|      7|        }
+ 1196|      4|            }
+ 1197|      4|            readStack.removeLast()
+ 1198|      4|            return true
+ 1199|      4|        }
  1200|      0|        return false
- 1201|      7|    }
+ 1201|      4|    }
  1202|       |
  1203|       |    /**
  1204|       |     Write an error to the socket
@@ -1865,7 +1865,7 @@
  1323|       |    func sha1Base64() -> String {
  1324|       |        let data = self.data(using: String.Encoding.utf8)!
  1325|       |        var digest = [UInt8](repeating: 0, count:Int(CC_SHA1_DIGEST_LENGTH))
- 1326|      8|        data.withUnsafeBytes { _ = CC_SHA1($0, CC_LONG(data.count), &digest) }
+ 1326|      6|        data.withUnsafeBytes { _ = CC_SHA1($0, CC_LONG(data.count), &digest) }
  1327|       |        return Data(bytes: digest).base64EncodedString()
  1328|       |    }
  1329|       |}

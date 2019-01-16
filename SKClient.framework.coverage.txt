@@ -39,160 +39,160 @@
    39|       |
    40|     10|    public init(){}
    41|       |
-   42|      7|    open func notificationForEvent(_ event: Event, type: EventType) {
-   43|      7|        switch type {
-   44|      7|        case .hello:
-   45|      7|            // Connection event
-   46|      7|            break
-   47|      7|        case .ok:
+   42|      4|    open func notificationForEvent(_ event: Event, type: EventType) {
+   43|      4|        switch type {
+   44|      4|        case .hello:
+   45|      4|            // Connection event
+   46|      4|            break
+   47|      4|        case .ok:
    48|      0|            messageSent(event)
-   49|      7|        case .message:
+   49|      4|        case .message:
    50|      0|            if event.subtype != nil {
    51|      0|                messageDispatcher(event)
    52|      0|            } else {
    53|      0|                messageReceived(event)
-   54|      7|            }
-   55|      7|        case .userTyping:
+   54|      4|            }
+   55|      4|        case .userTyping:
    56|      0|            userTyping(event)
-   57|      7|        case .channelMarked, .imMarked, .groupMarked:
+   57|      4|        case .channelMarked, .imMarked, .groupMarked:
    58|      0|            channelMarked(event)
-   59|      7|        case .channelCreated, .imCreated:
+   59|      4|        case .channelCreated, .imCreated:
    60|      0|            channelCreated(event)
-   61|      7|        case .channelJoined, .groupJoined:
+   61|      4|        case .channelJoined, .groupJoined:
    62|      0|            channelJoined(event)
-   63|      7|        case .channelLeft, .groupLeft:
+   63|      4|        case .channelLeft, .groupLeft:
    64|      0|            channelLeft(event)
-   65|      7|        case .channelDeleted:
+   65|      4|        case .channelDeleted:
    66|      0|            channelDeleted(event)
-   67|      7|        case .channelRenamed, .groupRename:
+   67|      4|        case .channelRenamed, .groupRename:
    68|      0|            channelRenamed(event)
-   69|      7|        case .channelArchive, .groupArchive:
+   69|      4|        case .channelArchive, .groupArchive:
    70|      0|            channelArchived(event, archived: true)
-   71|      7|        case .channelUnarchive, .groupUnarchive:
+   71|      4|        case .channelUnarchive, .groupUnarchive:
    72|      0|            channelArchived(event, archived: false)
-   73|      7|        case .channelHistoryChanged, .imHistoryChanged, .groupHistoryChanged:
+   73|      4|        case .channelHistoryChanged, .imHistoryChanged, .groupHistoryChanged:
    74|      0|            channelHistoryChanged(event)
-   75|      7|        case .dndUpdated:
+   75|      4|        case .dndUpdated:
    76|      0|            doNotDisturbUpdated(event)
-   77|      7|        case .dndUpatedUser:
+   77|      4|        case .dndUpatedUser:
    78|      0|            doNotDisturbUserUpdated(event)
-   79|      7|        case .imOpen, .groupOpen:
+   79|      4|        case .imOpen, .groupOpen:
    80|      0|            open(event, open: true)
-   81|      7|        case .imClose, .groupClose:
+   81|      4|        case .imClose, .groupClose:
    82|      0|            open(event, open: false)
-   83|      7|        case .fileCreated:
+   83|      4|        case .fileCreated:
    84|      0|            processFile(event)
-   85|      7|        case .fileShared:
+   85|      4|        case .fileShared:
    86|      0|            processFile(event)
-   87|      7|        case .fileUnshared:
+   87|      4|        case .fileUnshared:
    88|      0|            processFile(event)
-   89|      7|        case .filePublic:
+   89|      4|        case .filePublic:
    90|      0|            processFile(event)
-   91|      7|        case .filePrivate:
+   91|      4|        case .filePrivate:
    92|      0|            filePrivate(event)
-   93|      7|        case .fileChanged:
+   93|      4|        case .fileChanged:
    94|      0|            processFile(event)
-   95|      7|        case .fileDeleted:
+   95|      4|        case .fileDeleted:
    96|      0|            deleteFile(event)
-   97|      7|        case .fileCommentAdded:
+   97|      4|        case .fileCommentAdded:
    98|      0|            fileCommentAdded(event)
-   99|      7|        case .fileCommentEdited:
+   99|      4|        case .fileCommentEdited:
   100|      0|            fileCommentEdited(event)
-  101|      7|        case .fileCommentDeleted:
+  101|      4|        case .fileCommentDeleted:
   102|      0|            fileCommentDeleted(event)
-  103|      7|        case .pinAdded:
+  103|      4|        case .pinAdded:
   104|      0|            pinAdded(event)
-  105|      7|        case .pinRemoved:
+  105|      4|        case .pinRemoved:
   106|      0|            pinRemoved(event)
-  107|      7|        case .pong:
+  107|      4|        case .pong:
   108|      0|            // Pong event
   109|      0|            break
-  110|      7|        case .presenceChange:
+  110|      4|        case .presenceChange:
   111|      0|            presenceChange(event)
-  112|      7|        case .manualPresenceChange:
+  112|      4|        case .manualPresenceChange:
   113|      0|            manualPresenceChange(event)
-  114|      7|        case .prefChange:
+  114|      4|        case .prefChange:
   115|      0|            changePreference(event)
-  116|      7|        case .userChange:
+  116|      4|        case .userChange:
   117|      0|            userChange(event)
-  118|      7|        case .teamJoin:
+  118|      4|        case .teamJoin:
   119|      0|            teamJoin(event)
-  120|      7|        case .starAdded:
+  120|      4|        case .starAdded:
   121|      0|            itemStarred(event, star: true)
-  122|      7|        case .starRemoved:
+  122|      4|        case .starRemoved:
   123|      0|            itemStarred(event, star: false)
-  124|      7|        case .reactionAdded:
+  124|      4|        case .reactionAdded:
   125|      0|            addedReaction(event)
-  126|      7|        case .reactionRemoved:
+  126|      4|        case .reactionRemoved:
   127|      0|            removedReaction(event)
-  128|      7|        case .emojiChanged:
+  128|      4|        case .emojiChanged:
   129|      0|            emojiChanged(event)
-  130|      7|        case .commandsChanged:
+  130|      4|        case .commandsChanged:
   131|      0|            // This functionality is only used by our web client.
   132|      0|            // The other APIs required to support slash command metadata are currently unstable.
   133|      0|            // Until they are released other clients should ignore this event.
   134|      0|            break
-  135|      7|        case .teamPlanChange:
+  135|      4|        case .teamPlanChange:
   136|      0|            teamPlanChange(event)
-  137|      7|        case .teamPrefChange:
+  137|      4|        case .teamPrefChange:
   138|      0|            teamPreferenceChange(event)
-  139|      7|        case .teamRename:
+  139|      4|        case .teamRename:
   140|      0|            teamNameChange(event)
-  141|      7|        case .teamDomainChange:
+  141|      4|        case .teamDomainChange:
   142|      0|            teamDomainChange(event)
-  143|      7|        case .emailDomainChange:
+  143|      4|        case .emailDomainChange:
   144|      0|            emailDomainChange(event)
-  145|      7|        case .teamProfileChange:
+  145|      4|        case .teamProfileChange:
   146|      0|            teamProfileChange(event)
-  147|      7|        case .teamProfileDelete:
+  147|      4|        case .teamProfileDelete:
   148|      0|            teamProfileDeleted(event)
-  149|      7|        case .teamProfileReorder:
+  149|      4|        case .teamProfileReorder:
   150|      0|            teamProfileReordered(event)
-  151|      7|        case .botAdded:
+  151|      4|        case .botAdded:
   152|      0|            bot(event)
-  153|      7|        case .botChanged:
+  153|      4|        case .botChanged:
   154|      0|            bot(event)
-  155|      7|        case .accountsChanged:
+  155|      4|        case .accountsChanged:
   156|      0|            // The accounts_changed event is used by our web client to maintain a list of logged-in accounts.
   157|      0|            // Other clients should ignore this event.
   158|      0|            break
-  159|      7|        case .teamMigrationStarted:
+  159|      4|        case .teamMigrationStarted:
   160|      0|            // Team migration event
   161|      0|            break
-  162|      7|        case .reconnectURL:
+  162|      4|        case .reconnectURL:
   163|      0|            // The reconnect_url event is currently unsupported and experimental.
   164|      0|            break
-  165|      7|        case .subteamCreated, .subteamUpdated:
+  165|      4|        case .subteamCreated, .subteamUpdated:
   166|      0|            subteam(event)
-  167|      7|        case .subteamSelfAdded:
+  167|      4|        case .subteamSelfAdded:
   168|      0|            subteamAddedSelf(event)
-  169|      7|        case .subteamSelfRemoved:
+  169|      4|        case .subteamSelfRemoved:
   170|      0|            subteamRemovedSelf(event)
-  171|      7|        case .error:
+  171|      4|        case .error:
   172|      0|            // Error event
   173|      0|            break
-  174|      7|        case .goodbye:
+  174|      4|        case .goodbye:
   175|      0|            // Goodbye event
   176|      0|            break
-  177|      7|        case .unknown:
+  177|      4|        case .unknown:
   178|      0|            // Unsupported event
   179|      0|            break
-  180|      7|        }
-  181|      7|    }
+  180|      4|        }
+  181|      4|    }
   182|       |
   183|       |    // MARK: - Client setup
-  184|      9|    open func initialSetup(JSON: [String: Any]) {
-  185|      9|        team = Team(team: JSON["team"] as? [String: Any])
-  186|      9|        authenticatedUser = User(user: JSON["self"] as? [String: Any])
-  187|      9|        authenticatedUser?.doNotDisturbStatus = DoNotDisturbStatus(status: JSON["dnd"] as? [String: Any])
-  188|     61|        enumerateObjects(JSON["users"] as? Array) { (user) in self.addUser(user) }
-  189|     64|        enumerateObjects(JSON["channels"] as? Array) { (channel) in self.addChannel(channel) }
-  190|      9|        enumerateObjects(JSON["groups"] as? Array) { (group) in self.addChannel(group) }
-  191|      9|        enumerateObjects(JSON["mpims"] as? Array) { (mpim) in self.addChannel(mpim) }
-  192|     48|        enumerateObjects(JSON["ims"] as? Array) { (ims) in self.addChannel(ims) }
-  193|    120|        enumerateObjects(JSON["bots"] as? Array) { (bots) in self.addBot(bots) }
-  194|      9|        enumerateSubteams(JSON["subteams"] as? [String: Any])
-  195|      9|    }
+  184|     10|    open func initialSetup(JSON: [String: Any]) {
+  185|     10|        team = Team(team: JSON["team"] as? [String: Any])
+  186|     10|        authenticatedUser = User(user: JSON["self"] as? [String: Any])
+  187|     10|        authenticatedUser?.doNotDisturbStatus = DoNotDisturbStatus(status: JSON["dnd"] as? [String: Any])
+  188|     70|        enumerateObjects(JSON["users"] as? Array) { (user) in self.addUser(user) }
+  189|     80|        enumerateObjects(JSON["channels"] as? Array) { (channel) in self.addChannel(channel) }
+  190|     10|        enumerateObjects(JSON["groups"] as? Array) { (group) in self.addChannel(group) }
+  191|     10|        enumerateObjects(JSON["mpims"] as? Array) { (mpim) in self.addChannel(mpim) }
+  192|     60|        enumerateObjects(JSON["ims"] as? Array) { (ims) in self.addChannel(ims) }
+  193|    150|        enumerateObjects(JSON["bots"] as? Array) { (bots) in self.addBot(bots) }
+  194|     10|        enumerateSubteams(JSON["subteams"] as? [String: Any])
+  195|     10|    }
   196|       |
   197|      0|    private func messageDispatcher(_ event: Event) {
   198|      0|        guard let value = event.subtype, let subtype = MessageSubtype(rawValue:value) else {

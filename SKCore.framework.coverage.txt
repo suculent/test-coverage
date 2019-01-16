@@ -370,11 +370,11 @@
    27|       |    public var name: String?
    28|       |    public var icons: [String: Any]?
    29|       |
-   30|    127|    public init(bot: [String: Any]?) {
-   31|    127|        id = bot?["id"] as? String
-   32|    127|        name = bot?["name"] as? String
-   33|    127|        icons = bot?["icons"] as? [String: Any]
-   34|    127|    }
+   30|    154|    public init(bot: [String: Any]?) {
+   31|    154|        id = bot?["id"] as? String
+   32|    154|        name = bot?["name"] as? String
+   33|    154|        icons = bot?["icons"] as? [String: Any]
+   34|    154|    }
    35|       |
    36|      0|    public init(botUser: [String: Any]?) {
    37|      0|        id = botUser?["bot_user_id"] as? String
@@ -433,43 +433,43 @@
    48|       |    public var usersTyping = [String]()
    49|       |    public var messages = [String: Message]()
    50|       |
-   51|    112|    public init(channel: [String: Any]?) {
-   52|    112|        id = channel?["id"] as? String
-   53|    112|        name = channel?["name"] as? String
-   54|    112|        created = channel?["created"] as? Int
-   55|    112|        creator = channel?["creator"] as? String
-   56|    112|        isArchived = channel?["is_archived"] as? Bool
-   57|    112|        isGeneral = channel?["is_general"] as? Bool
-   58|    112|        isGroup = channel?["is_group"] as? Bool
-   59|    112|        isIM = channel?["is_im"] as? Bool
-   60|    112|        isMPIM = channel?["is_mpim"] as? Bool
-   61|    112|        isUserDeleted = channel?["is_user_deleted"] as? Bool
-   62|    112|        user = channel?["user"] as? String
-   63|    112|        isOpen = channel?["is_open"] as? Bool
-   64|    112|        topic = Topic(topic: channel?["topic"] as? [String: Any])
-   65|    112|        purpose = Topic(topic: channel?["purpose"] as? [String: Any])
-   66|    112|        isMember = channel?["is_member"] as? Bool
-   67|    112|        lastRead = channel?["last_read"] as? String
-   68|    112|        unread = channel?["unread_count"] as? Int
-   69|    112|        unreadCountDisplay = channel?["unread_count_display"] as? Int
-   70|    112|        hasPins = channel?["has_pins"] as? Bool
-   71|    112|        members = channel?["members"] as? [String]
-   72|    112|
-   73|    112|        if let latestMesssageDictionary = channel?["latest"] as? [String: Any] {
+   51|    140|    public init(channel: [String: Any]?) {
+   52|    140|        id = channel?["id"] as? String
+   53|    140|        name = channel?["name"] as? String
+   54|    140|        created = channel?["created"] as? Int
+   55|    140|        creator = channel?["creator"] as? String
+   56|    140|        isArchived = channel?["is_archived"] as? Bool
+   57|    140|        isGeneral = channel?["is_general"] as? Bool
+   58|    140|        isGroup = channel?["is_group"] as? Bool
+   59|    140|        isIM = channel?["is_im"] as? Bool
+   60|    140|        isMPIM = channel?["is_mpim"] as? Bool
+   61|    140|        isUserDeleted = channel?["is_user_deleted"] as? Bool
+   62|    140|        user = channel?["user"] as? String
+   63|    140|        isOpen = channel?["is_open"] as? Bool
+   64|    140|        topic = Topic(topic: channel?["topic"] as? [String: Any])
+   65|    140|        purpose = Topic(topic: channel?["purpose"] as? [String: Any])
+   66|    140|        isMember = channel?["is_member"] as? Bool
+   67|    140|        lastRead = channel?["last_read"] as? String
+   68|    140|        unread = channel?["unread_count"] as? Int
+   69|    140|        unreadCountDisplay = channel?["unread_count_display"] as? Int
+   70|    140|        hasPins = channel?["has_pins"] as? Bool
+   71|    140|        members = channel?["members"] as? [String]
+   72|    140|
+   73|    140|        if let latestMesssageDictionary = channel?["latest"] as? [String: Any] {
    74|      0|            latest = Message(dictionary: latestMesssageDictionary)
-   75|    112|        } else {
-   76|    112|            latest = Message(ts: channel?["latest"] as? String)
-   77|    112|        }
-   78|    112|    }
+   75|    140|        } else {
+   76|    140|            latest = Message(ts: channel?["latest"] as? String)
+   77|    140|        }
+   78|    140|    }
    79|       |
-   80|      7|    public init(id: String?) {
-   81|      7|        self.id = id
-   82|      7|        created = nil
-   83|      7|        creator = nil
-   84|      7|        isGroup = false
-   85|      7|        isIM = false
-   86|      7|        isMPIM = false
-   87|      7|    }
+   80|      4|    public init(id: String?) {
+   81|      4|        self.id = id
+   82|      4|        created = nil
+   83|      4|        creator = nil
+   84|      4|        isGroup = false
+   85|      4|        isIM = false
+   86|      4|        isMPIM = false
+   87|      4|    }
    88|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Comment.swift:
@@ -505,20 +505,20 @@
    30|       |    public var stars: Int?
    31|       |    public var reactions = [Reaction]()
    32|       |
-   33|     42|    public init(comment: [String: Any]?) {
-   34|     42|        self.comment = comment?["comment"] as? String
-   35|     42|        id = comment?["id"] as? String
-   36|     42|        created = comment?["created"] as? Int
-   37|     42|        user = comment?["user"] as? String
-   38|     42|        starred = comment?["is_starred"] as? Bool
-   39|     42|        stars = comment?["num_stars"] as? Int
-   40|     42|        reactions = Reaction.reactionsFromArray(comment?["reactions"] as? [[String: Any]])
-   41|     42|    }
+   33|     24|    public init(comment: [String: Any]?) {
+   34|     24|        self.comment = comment?["comment"] as? String
+   35|     24|        id = comment?["id"] as? String
+   36|     24|        created = comment?["created"] as? Int
+   37|     24|        user = comment?["user"] as? String
+   38|     24|        starred = comment?["is_starred"] as? Bool
+   39|     24|        stars = comment?["num_stars"] as? Int
+   40|     24|        reactions = Reaction.reactionsFromArray(comment?["reactions"] as? [[String: Any]])
+   41|     24|    }
    42|       |
-   43|     14|    public init(id: String?) {
-   44|     14|        self.id = id
-   45|     14|        self.user = nil
-   46|     14|    }
+   43|      8|    public init(id: String?) {
+   44|      8|        self.id = id
+   45|      8|        self.user = nil
+   46|      8|    }
    47|       |
    48|      0|    public static func == (lhs: Comment, rhs: Comment) -> Bool {
    49|      0|        return lhs.id == rhs.id
@@ -552,8 +552,8 @@
    24|       |public struct CustomProfile {
    25|       |    public var fields = [String: CustomProfileField]()
    26|       |
-   27|      7|    public init(profile: [String: Any]?) {
-   28|      7|        if let eventFields = profile?["fields"] as? [Any] {
+   27|      4|    public init(profile: [String: Any]?) {
+   28|      4|        if let eventFields = profile?["fields"] as? [Any] {
    29|      0|            for field in eventFields {
    30|      0|                var cpf: CustomProfileField?
    31|      0|                if let fieldDictionary = field as? [String: Any] {
@@ -563,17 +563,17 @@
    35|      0|                }
    36|      0|                if let id = cpf?.id { fields[id] = cpf }
    37|      0|            }
-   38|      7|        }
-   39|      7|    }
+   38|      4|        }
+   39|      4|    }
    40|       |
-   41|     71|    public init(customFields: [String: Any]?) {
-   42|     71|        if let customFields = customFields {
+   41|     80|    public init(customFields: [String: Any]?) {
+   42|     80|        if let customFields = customFields {
    43|      0|            for key in customFields.keys {
    44|      0|                let cpf = CustomProfileField(field: customFields[key] as? [String: Any])
    45|      0|                self.fields[key] = cpf
    46|      0|            }
-   47|     71|        }
-   48|     71|    }
+   47|     80|        }
+   48|     80|    }
    49|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/CustomProfileField.swift:
@@ -674,13 +674,13 @@
    28|       |    public var snoozeEnabled: Bool?
    29|       |    public var snoozeEndtime: Int?
    30|       |
-   31|     16|    public init(status: [String: Any]?) {
-   32|     16|        enabled = status?["dnd_enabled"] as? Bool
-   33|     16|        nextDoNotDisturbStart = status?["next_dnd_start_ts"] as? Int
-   34|     16|        nextDoNotDisturbEnd = status?["next_dnd_end_ts"] as? Int
-   35|     16|        snoozeEnabled = status?["snooze_enabled"] as? Bool
-   36|     16|        snoozeEndtime = status?["snooze_endtime"] as? Int
-   37|     16|    }
+   31|     14|    public init(status: [String: Any]?) {
+   32|     14|        enabled = status?["dnd_enabled"] as? Bool
+   33|     14|        nextDoNotDisturbStart = status?["next_dnd_start_ts"] as? Int
+   34|     14|        nextDoNotDisturbEnd = status?["next_dnd_end_ts"] as? Int
+   35|     14|        snoozeEnabled = status?["snooze_enabled"] as? Bool
+   36|     14|        snoozeEndtime = status?["snooze_endtime"] as? Int
+   37|     14|    }
    38|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Edited.swift:
@@ -711,10 +711,10 @@
    25|       |    public let user: String?
    26|       |    public let ts: String?
    27|       |
-   28|      7|    public init(edited: [String: Any]?) {
-   29|      7|        user = edited?["user"] as? String
-   30|      7|        ts = edited?["ts"] as? String
-   31|      7|    }
+   28|      4|    public init(edited: [String: Any]?) {
+   29|      4|        user = edited?["user"] as? String
+   30|      4|        ts = edited?["ts"] as? String
+   31|      4|    }
    32|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Event.swift:
@@ -884,60 +884,60 @@
   164|       |    public var profile: CustomProfile?
   165|       |
   166|       |    //swiftlint:disable function_body_length
-  167|      7|    public init(_ event: [String: Any]) {
-  168|      7|        type = EventType(rawValue: event["type"] as? String ?? "ok")
-  169|      7|        ts = event["ts"] as? String
-  170|      7|        subtype = event["subtype"] as? String
-  171|      7|        channelID = event["channel_id"] as? String
-  172|      7|        text = event["text"] as? String
-  173|      7|        eventTs = event["event_ts"] as? String
-  174|      7|        latest = event["latest"] as? String
-  175|      7|        hidden = event["hidden"] as? Bool
-  176|      7|        isStarred = event["is_starred"] as? Bool
-  177|      7|        hasPins = event["has_pins"] as? Bool
-  178|      7|        pinnedTo = event["pinned_top"] as? [String]
-  179|      7|        fileID = event["file_id"] as? String
-  180|      7|        presence = event["presence"] as? String
-  181|      7|        name = event["name"] as? String
-  182|      7|        value = event["value"]
-  183|      7|        plan = event["plan"] as? String
-  184|      7|        url = event["url"] as? String
-  185|      7|        domain = event["domain"] as? String
-  186|      7|        emailDomain = event["email_domain"] as? String
-  187|      7|        reaction = event["reaction"] as? String
-  188|      7|        replyTo = event["reply_to"] as? Double
-  189|      7|        reactions = event["reactions"] as? [[String: Any]]
-  190|      7|        bot = Bot(bot: event["bot"] as? [String: Any])
-  191|      7|        edited = Edited(edited:event["edited"] as? [String: Any])
-  192|      7|        dndStatus = DoNotDisturbStatus(status: event["dnd_status"] as? [String: Any])
-  193|      7|        itemUser = event["item_user"] as? String
-  194|      7|        item = Item(item: event["item"] as? [String: Any])
-  195|      7|        subteam = UserGroup(userGroup: event["subteam"] as? [String: Any])
-  196|      7|        subteamID = event["subteam_id"] as? String
-  197|      7|        message = Message(dictionary: event)
-  198|      7|        nestedMessage = Message(dictionary: event["message"] as? [String: Any])
-  199|      7|        profile = CustomProfile(profile: event["profile"] as? [String: Any])
-  200|      7|        file = File(id: event["file"] as? String)
-  201|      7|
-  202|      7|        // Comment, Channel, and User can come across as Strings or Dictionaries
-  203|      7|        if let commentDictionary = event["comment"] as? [String: Any] {
+  167|      4|    public init(_ event: [String: Any]) {
+  168|      4|        type = EventType(rawValue: event["type"] as? String ?? "ok")
+  169|      4|        ts = event["ts"] as? String
+  170|      4|        subtype = event["subtype"] as? String
+  171|      4|        channelID = event["channel_id"] as? String
+  172|      4|        text = event["text"] as? String
+  173|      4|        eventTs = event["event_ts"] as? String
+  174|      4|        latest = event["latest"] as? String
+  175|      4|        hidden = event["hidden"] as? Bool
+  176|      4|        isStarred = event["is_starred"] as? Bool
+  177|      4|        hasPins = event["has_pins"] as? Bool
+  178|      4|        pinnedTo = event["pinned_top"] as? [String]
+  179|      4|        fileID = event["file_id"] as? String
+  180|      4|        presence = event["presence"] as? String
+  181|      4|        name = event["name"] as? String
+  182|      4|        value = event["value"]
+  183|      4|        plan = event["plan"] as? String
+  184|      4|        url = event["url"] as? String
+  185|      4|        domain = event["domain"] as? String
+  186|      4|        emailDomain = event["email_domain"] as? String
+  187|      4|        reaction = event["reaction"] as? String
+  188|      4|        replyTo = event["reply_to"] as? Double
+  189|      4|        reactions = event["reactions"] as? [[String: Any]]
+  190|      4|        bot = Bot(bot: event["bot"] as? [String: Any])
+  191|      4|        edited = Edited(edited:event["edited"] as? [String: Any])
+  192|      4|        dndStatus = DoNotDisturbStatus(status: event["dnd_status"] as? [String: Any])
+  193|      4|        itemUser = event["item_user"] as? String
+  194|      4|        item = Item(item: event["item"] as? [String: Any])
+  195|      4|        subteam = UserGroup(userGroup: event["subteam"] as? [String: Any])
+  196|      4|        subteamID = event["subteam_id"] as? String
+  197|      4|        message = Message(dictionary: event)
+  198|      4|        nestedMessage = Message(dictionary: event["message"] as? [String: Any])
+  199|      4|        profile = CustomProfile(profile: event["profile"] as? [String: Any])
+  200|      4|        file = File(id: event["file"] as? String)
+  201|      4|
+  202|      4|        // Comment, Channel, and User can come across as Strings or Dictionaries
+  203|      4|        if let commentDictionary = event["comment"] as? [String: Any] {
   204|      0|            comment = Comment(comment: commentDictionary)
-  205|      7|        } else {
-  206|      7|            comment = Comment(id: event["comment"] as? String)
-  207|      7|        }
-  208|      7|
-  209|      7|        if let userDictionary = event["user"] as? [String: Any] {
+  205|      4|        } else {
+  206|      4|            comment = Comment(id: event["comment"] as? String)
+  207|      4|        }
+  208|      4|
+  209|      4|        if let userDictionary = event["user"] as? [String: Any] {
   210|      0|            user = User(user: userDictionary)
-  211|      7|        } else {
-  212|      7|            user = User(id: event["user"] as? String)
-  213|      7|        }
-  214|      7|
-  215|      7|        if let channelDictionary =  event["channel"] as? [String: Any] {
+  211|      4|        } else {
+  212|      4|            user = User(id: event["user"] as? String)
+  213|      4|        }
+  214|      4|
+  215|      4|        if let channelDictionary =  event["channel"] as? [String: Any] {
   216|      0|            channel = Channel(channel: channelDictionary)
-  217|      7|        } else {
-  218|      7|            channel = Channel(id: event["channel"] as? String)
-  219|      7|        }
-  220|      7|    }
+  217|      4|        } else {
+  218|      4|            channel = Channel(id: event["channel"] as? String)
+  219|      4|        }
+  220|      4|    }
   221|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Extensions.swift:
@@ -973,13 +973,13 @@
    30|       |}
    31|       |
    32|       |public extension UInt64 {
-   33|     16|    static var nanosecondsPerSecond: UInt64 {
-   34|     16|        #if os(Linux)
-   35|     16|            return UInt64(CLOCKS_PER_SEC)
-   36|     16|        #else
-   37|     16|            return NSEC_PER_SEC
-   38|     16|        #endif
-   39|     16|    }
+   33|     12|    static var nanosecondsPerSecond: UInt64 {
+   34|     12|        #if os(Linux)
+   35|     12|            return UInt64(CLOCKS_PER_SEC)
+   36|     12|        #else
+   37|     12|            return NSEC_PER_SEC
+   38|     12|        #endif
+   39|     12|    }
    40|       |}
    41|       |
    42|     10|public func filterNilParameters(_ parameters: [String: Any?]) -> [String: Any] {
@@ -1073,107 +1073,107 @@
    78|       |    public var reactions = [Reaction]()
    79|       |
    80|       |    //swiftlint:disable function_body_length
-   81|     21|    public init(file: [String: Any]?) {
-   82|     21|        id = file?["id"] as? String
-   83|     21|        created = file?["created"] as? Int
-   84|     21|        name = file?["name"] as? String
-   85|     21|        title = file?["title"] as? String
-   86|     21|        mimeType = file?["mimetype"] as? String
-   87|     21|        fileType = file?["filetype"] as? String
-   88|     21|        prettyType = file?["pretty_type"] as? String
-   89|     21|        user = file?["user"] as? String
-   90|     21|        mode = file?["mode"] as? String
-   91|     21|        editable = file?["editable"] as? Bool
-   92|     21|        isExternal = file?["is_external"] as? Bool
-   93|     21|        externalType = file?["external_type"] as? String
-   94|     21|        size = file?["size"] as? Int
-   95|     21|        urlPrivate = file?["url_private"] as? String
-   96|     21|        urlPrivateDownload = file?["url_private_download"] as? String
-   97|     21|        thumb64 = file?["thumb_64"] as? String
-   98|     21|        thumb80 = file?["thumb_80"] as? String
-   99|     21|        thumb360 = file?["thumb_360"] as? String
-  100|     21|        thumb360gif = file?["thumb_360_gif"] as? String
-  101|     21|        thumb360w = file?["thumb_360_w"] as? String
-  102|     21|        thumb360h = file?["thumb_360_h"] as? String
-  103|     21|        thumb480 = file?["thumb_480"] as? String
-  104|     21|        thumb480gif = file?["thumb_480_gif"] as? String
-  105|     21|        thumb480w = file?["thumb_480_w"] as? String
-  106|     21|        thumb480h = file?["thumb_480_h"] as? String
-  107|     21|        thumb720 = file?["thumb_720"] as? String
-  108|     21|        thumb720gif = file?["thumb_720_gif"] as? String
-  109|     21|        thumb720w = file?["thumb_720_w"] as? String
-  110|     21|        thumb720h = file?["thumb_720_h"] as? String
-  111|     21|        thumb960 = file?["thumb_960"] as? String
-  112|     21|        thumb960gif = file?["thumb_960_gif"] as? String
-  113|     21|        thumb960w = file?["thumb_960_w"] as? String
-  114|     21|        thumb960h = file?["thumb_960_h"] as? String
-  115|     21|        thumb1024 = file?["thumb_1024"] as? String
-  116|     21|        thumb1024gif = file?["thumb_1024_gif"] as? String
-  117|     21|        thumb1024w = file?["thumb_1024_w"] as? String
-  118|     21|        thumb1024h = file?["thumb_1024_h"] as? String
-  119|     21|        permalink = file?["permalink"] as? String
-  120|     21|        editLink = file?["edit_link"] as? String
-  121|     21|        preview = file?["preview"] as? String
-  122|     21|        previewHighlight = file?["preview_highlight"] as? String
-  123|     21|        lines = file?["lines"] as? Int
-  124|     21|        linesMore = file?["lines_more"] as? Int
-  125|     21|        isPublic = file?["is_public"] as? Bool
-  126|     21|        publicSharedURL = file?["public_url_shared"] as? Bool
-  127|     21|        channels = file?["channels"] as? [String]
-  128|     21|        groups = file?["groups"] as? [String]
-  129|     21|        ims = file?["ims"] as? [String]
-  130|     21|        initialComment = Comment(comment: file?["initial_comment"] as? [String: Any])
-  131|     21|        stars = file?["num_stars"] as? Int
-  132|     21|        isStarred = file?["is_starred"] as? Bool
-  133|     21|        pinnedTo = file?["pinned_to"] as? [String]
-  134|     21|        reactions = Reaction.reactionsFromArray(file?["reactions"] as? [[String: Any]])
-  135|     21|    }
+   81|     12|    public init(file: [String: Any]?) {
+   82|     12|        id = file?["id"] as? String
+   83|     12|        created = file?["created"] as? Int
+   84|     12|        name = file?["name"] as? String
+   85|     12|        title = file?["title"] as? String
+   86|     12|        mimeType = file?["mimetype"] as? String
+   87|     12|        fileType = file?["filetype"] as? String
+   88|     12|        prettyType = file?["pretty_type"] as? String
+   89|     12|        user = file?["user"] as? String
+   90|     12|        mode = file?["mode"] as? String
+   91|     12|        editable = file?["editable"] as? Bool
+   92|     12|        isExternal = file?["is_external"] as? Bool
+   93|     12|        externalType = file?["external_type"] as? String
+   94|     12|        size = file?["size"] as? Int
+   95|     12|        urlPrivate = file?["url_private"] as? String
+   96|     12|        urlPrivateDownload = file?["url_private_download"] as? String
+   97|     12|        thumb64 = file?["thumb_64"] as? String
+   98|     12|        thumb80 = file?["thumb_80"] as? String
+   99|     12|        thumb360 = file?["thumb_360"] as? String
+  100|     12|        thumb360gif = file?["thumb_360_gif"] as? String
+  101|     12|        thumb360w = file?["thumb_360_w"] as? String
+  102|     12|        thumb360h = file?["thumb_360_h"] as? String
+  103|     12|        thumb480 = file?["thumb_480"] as? String
+  104|     12|        thumb480gif = file?["thumb_480_gif"] as? String
+  105|     12|        thumb480w = file?["thumb_480_w"] as? String
+  106|     12|        thumb480h = file?["thumb_480_h"] as? String
+  107|     12|        thumb720 = file?["thumb_720"] as? String
+  108|     12|        thumb720gif = file?["thumb_720_gif"] as? String
+  109|     12|        thumb720w = file?["thumb_720_w"] as? String
+  110|     12|        thumb720h = file?["thumb_720_h"] as? String
+  111|     12|        thumb960 = file?["thumb_960"] as? String
+  112|     12|        thumb960gif = file?["thumb_960_gif"] as? String
+  113|     12|        thumb960w = file?["thumb_960_w"] as? String
+  114|     12|        thumb960h = file?["thumb_960_h"] as? String
+  115|     12|        thumb1024 = file?["thumb_1024"] as? String
+  116|     12|        thumb1024gif = file?["thumb_1024_gif"] as? String
+  117|     12|        thumb1024w = file?["thumb_1024_w"] as? String
+  118|     12|        thumb1024h = file?["thumb_1024_h"] as? String
+  119|     12|        permalink = file?["permalink"] as? String
+  120|     12|        editLink = file?["edit_link"] as? String
+  121|     12|        preview = file?["preview"] as? String
+  122|     12|        previewHighlight = file?["preview_highlight"] as? String
+  123|     12|        lines = file?["lines"] as? Int
+  124|     12|        linesMore = file?["lines_more"] as? Int
+  125|     12|        isPublic = file?["is_public"] as? Bool
+  126|     12|        publicSharedURL = file?["public_url_shared"] as? Bool
+  127|     12|        channels = file?["channels"] as? [String]
+  128|     12|        groups = file?["groups"] as? [String]
+  129|     12|        ims = file?["ims"] as? [String]
+  130|     12|        initialComment = Comment(comment: file?["initial_comment"] as? [String: Any])
+  131|     12|        stars = file?["num_stars"] as? Int
+  132|     12|        isStarred = file?["is_starred"] as? Bool
+  133|     12|        pinnedTo = file?["pinned_to"] as? [String]
+  134|     12|        reactions = Reaction.reactionsFromArray(file?["reactions"] as? [[String: Any]])
+  135|     12|    }
   136|       |
-  137|     14|    public init(id: String?) {
-  138|     14|        self.id = id
-  139|     14|        created = nil
-  140|     14|        name = nil
-  141|     14|        title = nil
-  142|     14|        mimeType = nil
-  143|     14|        fileType = nil
-  144|     14|        prettyType = nil
-  145|     14|        user = nil
-  146|     14|        mode = nil
-  147|     14|        isExternal = nil
-  148|     14|        externalType = nil
-  149|     14|        size = nil
-  150|     14|        urlPrivate = nil
-  151|     14|        urlPrivateDownload = nil
-  152|     14|        thumb64 = nil
-  153|     14|        thumb80 = nil
-  154|     14|        thumb360 = nil
-  155|     14|        thumb360gif = nil
-  156|     14|        thumb360w = nil
-  157|     14|        thumb360h = nil
-  158|     14|        thumb480 = nil
-  159|     14|        thumb480gif = nil
-  160|     14|        thumb480w = nil
-  161|     14|        thumb480h = nil
-  162|     14|        thumb720 = nil
-  163|     14|        thumb720gif = nil
-  164|     14|        thumb720w = nil
-  165|     14|        thumb720h = nil
-  166|     14|        thumb960 = nil
-  167|     14|        thumb960gif = nil
-  168|     14|        thumb960w = nil
-  169|     14|        thumb960h = nil
-  170|     14|        thumb1024 = nil
-  171|     14|        thumb1024gif = nil
-  172|     14|        thumb1024w = nil
-  173|     14|        thumb1024h = nil
-  174|     14|        permalink = nil
-  175|     14|        editLink = nil
-  176|     14|        preview = nil
-  177|     14|        previewHighlight = nil
-  178|     14|        lines = nil
-  179|     14|        linesMore = nil
-  180|     14|        initialComment = nil
-  181|     14|    }
+  137|      8|    public init(id: String?) {
+  138|      8|        self.id = id
+  139|      8|        created = nil
+  140|      8|        name = nil
+  141|      8|        title = nil
+  142|      8|        mimeType = nil
+  143|      8|        fileType = nil
+  144|      8|        prettyType = nil
+  145|      8|        user = nil
+  146|      8|        mode = nil
+  147|      8|        isExternal = nil
+  148|      8|        externalType = nil
+  149|      8|        size = nil
+  150|      8|        urlPrivate = nil
+  151|      8|        urlPrivateDownload = nil
+  152|      8|        thumb64 = nil
+  153|      8|        thumb80 = nil
+  154|      8|        thumb360 = nil
+  155|      8|        thumb360gif = nil
+  156|      8|        thumb360w = nil
+  157|      8|        thumb360h = nil
+  158|      8|        thumb480 = nil
+  159|      8|        thumb480gif = nil
+  160|      8|        thumb480w = nil
+  161|      8|        thumb480h = nil
+  162|      8|        thumb720 = nil
+  163|      8|        thumb720gif = nil
+  164|      8|        thumb720w = nil
+  165|      8|        thumb720h = nil
+  166|      8|        thumb960 = nil
+  167|      8|        thumb960gif = nil
+  168|      8|        thumb960w = nil
+  169|      8|        thumb960h = nil
+  170|      8|        thumb1024 = nil
+  171|      8|        thumb1024gif = nil
+  172|      8|        thumb1024w = nil
+  173|      8|        thumb1024h = nil
+  174|      8|        permalink = nil
+  175|      8|        editLink = nil
+  176|      8|        preview = nil
+  177|      8|        previewHighlight = nil
+  178|      8|        lines = nil
+  179|      8|        linesMore = nil
+  180|      8|        initialComment = nil
+  181|      8|    }
   182|       |
   183|      0|    public static func == (lhs: File, rhs: File) -> Bool {
   184|      0|        return lhs.id == rhs.id
@@ -1257,27 +1257,27 @@
    30|       |    public let comment: Comment?
    31|       |    public let fileCommentID: String?
    32|       |
-   33|      7|    public init(item: [String: Any]?) {
-   34|      7|        type = item?["type"] as? String
-   35|      7|        ts = item?["ts"] as? String
-   36|      7|        channel = item?["channel"] as? String
-   37|      7|        message = Message(dictionary: item?["message"] as? [String: Any])
-   38|      7|
-   39|      7|        // Comment and File can come across as Strings or Dictionaries
-   40|      7|        if let commentDictionary = item?["comment"] as? [String: Any] {
+   33|      4|    public init(item: [String: Any]?) {
+   34|      4|        type = item?["type"] as? String
+   35|      4|        ts = item?["ts"] as? String
+   36|      4|        channel = item?["channel"] as? String
+   37|      4|        message = Message(dictionary: item?["message"] as? [String: Any])
+   38|      4|
+   39|      4|        // Comment and File can come across as Strings or Dictionaries
+   40|      4|        if let commentDictionary = item?["comment"] as? [String: Any] {
    41|      0|            comment = Comment(comment: commentDictionary)
-   42|      7|        } else {
-   43|      7|            comment = Comment(id: item?["comment"] as? String)
-   44|      7|        }
-   45|      7|
-   46|      7|        if let fileDictionary = item?["file"] as? [String: Any] {
+   42|      4|        } else {
+   43|      4|            comment = Comment(id: item?["comment"] as? String)
+   44|      4|        }
+   45|      4|
+   46|      4|        if let fileDictionary = item?["file"] as? [String: Any] {
    47|      0|            file = File(file: fileDictionary)
-   48|      7|        } else {
-   49|      7|            file = File(id: item?["file"] as? String)
-   50|      7|        }
-   51|      7|
-   52|      7|        fileCommentID = item?["file_comment"] as? String
-   53|      7|    }
+   48|      4|        } else {
+   49|      4|            file = File(id: item?["file"] as? String)
+   50|      4|        }
+   51|      4|
+   52|      4|        fileCommentID = item?["file_comment"] as? String
+   53|      4|    }
    54|       |
    55|      0|    public static func == (lhs: Item, rhs: Item) -> Bool {
    56|      0|        return
@@ -1346,55 +1346,55 @@
    54|       |    public var replaceOriginal: Bool?
    55|       |    public var deleteOriginal: Bool?
    56|       |
-   57|     21|    public init(dictionary: [String: Any]?) {
-   58|     21|        subtype = dictionary?["subtype"] as? String
-   59|     21|        ts = dictionary?["ts"] as? String
-   60|     21|        threadTs = dictionary?["thread_ts"] as? String
-   61|     21|        parentUserId = dictionary?["parent_user_id"] as? String
-   62|     21|        replyCount = dictionary?["reply_count"] as? Int
-   63|     21|        replies = (dictionary?["replies"] as? [[String: Any]])?.map({ Reply(reply: $0) })
-   64|     21|        user = dictionary?["user"] as? String
-   65|     21|        channel = dictionary?["channel"] as? String
-   66|     21|        hidden = dictionary?["hidden"] as? Bool
-   67|     21|        text = dictionary?["text"] as? String
-   68|     21|        botID = dictionary?["bot_id"] as? String
-   69|     21|        username = dictionary?["username"] as? String
-   70|     21|        icons = dictionary?["icons"] as? [String: Any]
-   71|     21|        deletedTs = dictionary?["deleted_ts"] as? String
-   72|     21|        purpose = dictionary?["purpose"] as? String
-   73|     21|        topic = dictionary?["topic"] as? String
-   74|     21|        name = dictionary?["name"] as? String
-   75|     21|        members = dictionary?["members"] as? [String]
-   76|     21|        oldName = dictionary?["old_name"] as? String
-   77|     21|        upload = dictionary?["upload"] as? Bool
-   78|     21|        itemType = dictionary?["item_type"] as? String
-   79|     21|        isStarred = dictionary?["is_starred"] as? Bool
-   80|     21|        pinnedTo = dictionary?["pinned_to"] as? [String]
-   81|     21|        comment = Comment(comment: dictionary?["comment"] as? [String: Any])
-   82|     21|        file = File(file: dictionary?["file"] as? [String: Any])
-   83|     21|        reactions = Reaction.reactionsFromArray(dictionary?["reactions"] as? [[String: Any]])
-   84|     21|        attachments = (dictionary?["attachments"] as? [[String: Any]])?.map { Attachment(attachment: $0) }
-   85|     21|        responseType = MessageResponseType(rawValue: dictionary?["response_type"] as? String ?? "")
-   86|     21|        replaceOriginal = dictionary?["replace_original"] as? Bool
-   87|     21|        deleteOriginal = dictionary?["delete_original"] as? Bool
-   88|     21|    }
+   57|     12|    public init(dictionary: [String: Any]?) {
+   58|     12|        subtype = dictionary?["subtype"] as? String
+   59|     12|        ts = dictionary?["ts"] as? String
+   60|     12|        threadTs = dictionary?["thread_ts"] as? String
+   61|     12|        parentUserId = dictionary?["parent_user_id"] as? String
+   62|     12|        replyCount = dictionary?["reply_count"] as? Int
+   63|     12|        replies = (dictionary?["replies"] as? [[String: Any]])?.map({ Reply(reply: $0) })
+   64|     12|        user = dictionary?["user"] as? String
+   65|     12|        channel = dictionary?["channel"] as? String
+   66|     12|        hidden = dictionary?["hidden"] as? Bool
+   67|     12|        text = dictionary?["text"] as? String
+   68|     12|        botID = dictionary?["bot_id"] as? String
+   69|     12|        username = dictionary?["username"] as? String
+   70|     12|        icons = dictionary?["icons"] as? [String: Any]
+   71|     12|        deletedTs = dictionary?["deleted_ts"] as? String
+   72|     12|        purpose = dictionary?["purpose"] as? String
+   73|     12|        topic = dictionary?["topic"] as? String
+   74|     12|        name = dictionary?["name"] as? String
+   75|     12|        members = dictionary?["members"] as? [String]
+   76|     12|        oldName = dictionary?["old_name"] as? String
+   77|     12|        upload = dictionary?["upload"] as? Bool
+   78|     12|        itemType = dictionary?["item_type"] as? String
+   79|     12|        isStarred = dictionary?["is_starred"] as? Bool
+   80|     12|        pinnedTo = dictionary?["pinned_to"] as? [String]
+   81|     12|        comment = Comment(comment: dictionary?["comment"] as? [String: Any])
+   82|     12|        file = File(file: dictionary?["file"] as? [String: Any])
+   83|     12|        reactions = Reaction.reactionsFromArray(dictionary?["reactions"] as? [[String: Any]])
+   84|     12|        attachments = (dictionary?["attachments"] as? [[String: Any]])?.map { Attachment(attachment: $0) }
+   85|     12|        responseType = MessageResponseType(rawValue: dictionary?["response_type"] as? String ?? "")
+   86|     12|        replaceOriginal = dictionary?["replace_original"] as? Bool
+   87|     12|        deleteOriginal = dictionary?["delete_original"] as? Bool
+   88|     12|    }
    89|       |
-   90|    112|    public init(ts: String?) {
-   91|    112|        self.ts = ts
-   92|    112|        threadTs = nil
-   93|    112|        parentUserId = nil
-   94|    112|        subtype = nil
-   95|    112|        user = nil
-   96|    112|        channel = nil
-   97|    112|        botID = nil
-   98|    112|        username = nil
-   99|    112|        icons = nil
-  100|    112|        deletedTs = nil
-  101|    112|        upload = nil
-  102|    112|        itemType = nil
-  103|    112|        comment = nil
-  104|    112|        file = nil
-  105|    112|    }
+   90|    140|    public init(ts: String?) {
+   91|    140|        self.ts = ts
+   92|    140|        threadTs = nil
+   93|    140|        parentUserId = nil
+   94|    140|        subtype = nil
+   95|    140|        user = nil
+   96|    140|        channel = nil
+   97|    140|        botID = nil
+   98|    140|        username = nil
+   99|    140|        icons = nil
+  100|    140|        deletedTs = nil
+  101|    140|        upload = nil
+  102|    140|        itemType = nil
+  103|    140|        comment = nil
+  104|    140|        file = nil
+  105|    140|    }
   106|       |
   107|      0|    public static func == (lhs: Message, rhs: Message) -> Bool {
   108|      0|        return lhs.ts == rhs.ts && lhs.threadTs == rhs.threadTs && lhs.user == rhs.user && lhs.text == rhs.text
@@ -1538,9 +1538,9 @@
    34|      0|        self.user = user
    35|      0|    }
    36|       |
-   37|     84|    static func reactionsFromArray(_ array: [[String: Any]]?) -> [Reaction] {
-   38|     84|        var reactions = [Reaction]()
-   39|     84|        if let array = array {
+   37|     48|    static func reactionsFromArray(_ array: [[String: Any]]?) -> [Reaction] {
+   38|     48|        var reactions = [Reaction]()
+   39|     48|        if let array = array {
    40|      0|            for reaction in array {
    41|      0|                if let users = reaction["users"] as? [String], let name = reaction["name"] as? String {
    42|      0|                    for user in users {
@@ -1548,9 +1548,9 @@
    44|      0|                    }
    45|      0|                }
    46|      0|            }
-   47|     84|        }
-   48|     84|        return reactions
-   49|     84|    }
+   47|     48|        }
+   48|     48|        return reactions
+   49|     48|    }
    50|       |
    51|      0|    public static func == (lhs: Reaction, rhs: Reaction) -> Bool {
    52|      0|        return lhs.name == rhs.name
@@ -1626,17 +1626,17 @@
    32|       |    public var plan: String?
    33|       |    public var icon: TeamIcon?
    34|       |
-   35|      9|    public init(team: [String: Any]?) {
-   36|      9|        id = team?["id"] as? String
-   37|      9|        name = team?["name"] as? String
-   38|      9|        domain = team?["domain"] as? String
-   39|      9|        emailDomain = team?["email_domain"] as? String
-   40|      9|        messageEditWindowMinutes = team?["msg_edit_window_mins"] as? Int
-   41|      9|        overStorageLimit = team?["over_storage_limit"] as? Bool
-   42|      9|        prefs = team?["prefs"] as? [String: Any]
-   43|      9|        plan = team?["plan"] as? String
-   44|      9|        icon = TeamIcon(icon: team?["icon"] as? [String: Any])
-   45|      9|    }
+   35|     10|    public init(team: [String: Any]?) {
+   36|     10|        id = team?["id"] as? String
+   37|     10|        name = team?["name"] as? String
+   38|     10|        domain = team?["domain"] as? String
+   39|     10|        emailDomain = team?["email_domain"] as? String
+   40|     10|        messageEditWindowMinutes = team?["msg_edit_window_mins"] as? Int
+   41|     10|        overStorageLimit = team?["over_storage_limit"] as? Bool
+   42|     10|        prefs = team?["prefs"] as? [String: Any]
+   43|     10|        plan = team?["plan"] as? String
+   44|     10|        icon = TeamIcon(icon: team?["icon"] as? [String: Any])
+   45|     10|    }
    46|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/TeamIcon.swift:
@@ -1673,16 +1673,16 @@
    31|       |    public var imageOriginal: String?
    32|       |    public var imageDefault: Bool?
    33|       |
-   34|      9|    public init(icon: [String: Any]?) {
-   35|      9|        image34 = icon?["image_34"] as? String
-   36|      9|        image44 = icon?["image_44"] as? String
-   37|      9|        image68 = icon?["image_68"] as? String
-   38|      9|        image88 = icon?["image_88"] as? String
-   39|      9|        image102 = icon?["image_102"] as? String
-   40|      9|        image132 = icon?["image_132"] as? String
-   41|      9|        imageOriginal = icon?["image_original"] as? String
-   42|      9|        imageDefault = icon?["image_default"] as? Bool
-   43|      9|    }
+   34|     10|    public init(icon: [String: Any]?) {
+   35|     10|        image34 = icon?["image_34"] as? String
+   36|     10|        image44 = icon?["image_44"] as? String
+   37|     10|        image68 = icon?["image_68"] as? String
+   38|     10|        image88 = icon?["image_88"] as? String
+   39|     10|        image102 = icon?["image_102"] as? String
+   40|     10|        image132 = icon?["image_132"] as? String
+   41|     10|        imageOriginal = icon?["image_original"] as? String
+   42|     10|        imageDefault = icon?["image_default"] as? Bool
+   43|     10|    }
    44|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Topic.swift:
@@ -1714,11 +1714,11 @@
    26|       |    public let creator: String?
    27|       |    public let lastSet: Int?
    28|       |
-   29|    224|    public init(topic: [String: Any]?) {
-   30|    224|        value = topic?["value"] as? String
-   31|    224|        creator = topic?["creator"] as? String
-   32|    224|        lastSet = topic?["last_set"] as? Int
-   33|    224|    }
+   29|    280|    public init(topic: [String: Any]?) {
+   30|    280|        value = topic?["value"] as? String
+   31|    280|        creator = topic?["creator"] as? String
+   32|    280|        lastSet = topic?["last_set"] as? Int
+   33|    280|    }
    34|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/User.swift:
@@ -1759,19 +1759,19 @@
    35|       |        public var image192: String?
    36|       |        public var customProfile: CustomProfile?
    37|       |
-   38|     72|        public init(profile: [String: Any]?) {
-   39|     72|            firstName = profile?["first_name"] as? String
-   40|     72|            lastName = profile?["last_name"] as? String
-   41|     72|            realName = profile?["real_name"] as? String
-   42|     72|            email = profile?["email"] as? String
-   43|     72|            phone = profile?["phone"] as? String
-   44|     72|            image24 = profile?["image_24"] as? String
-   45|     72|            image32 = profile?["image_32"] as? String
-   46|     72|            image48 = profile?["image_48"] as? String
-   47|     72|            image72 = profile?["image_72"] as? String
-   48|     72|            image192 = profile?["image_192"] as? String
-   49|     72|            customProfile = CustomProfile(customFields: profile?["fields"] as? [String: Any])
-   50|     72|        }
+   38|     80|        public init(profile: [String: Any]?) {
+   39|     80|            firstName = profile?["first_name"] as? String
+   40|     80|            lastName = profile?["last_name"] as? String
+   41|     80|            realName = profile?["real_name"] as? String
+   42|     80|            email = profile?["email"] as? String
+   43|     80|            phone = profile?["phone"] as? String
+   44|     80|            image24 = profile?["image_24"] as? String
+   45|     80|            image32 = profile?["image_32"] as? String
+   46|     80|            image48 = profile?["image_48"] as? String
+   47|     80|            image72 = profile?["image_72"] as? String
+   48|     80|            image192 = profile?["image_192"] as? String
+   49|     80|            customProfile = CustomProfile(customFields: profile?["fields"] as? [String: Any])
+   50|     80|        }
    51|       |    }
    52|       |
    53|       |    public let id: String?
@@ -1797,32 +1797,32 @@
    73|       |    // Client properties
    74|       |    public var userGroups: [String: String]?
    75|       |
-   76|     72|    public init(user: [String: Any]?) {
-   77|     72|        id = user?["id"] as? String
-   78|     72|        name = user?["name"] as? String
-   79|     72|        deleted = user?["deleted"] as? Bool
-   80|     72|        profile = Profile(profile: user?["profile"] as? [String: Any])
-   81|     72|        color = user?["color"] as? String
-   82|     72|        isAdmin = user?["is_admin"] as? Bool
-   83|     72|        isOwner = user?["is_owner"] as? Bool
-   84|     72|        isPrimaryOwner = user?["is_primary_owner"] as? Bool
-   85|     72|        isRestricted = user?["is_restricted"] as? Bool
-   86|     72|        isUltraRestricted = user?["is_ultra_restricted"] as? Bool
-   87|     72|        has2fa = user?["has_2fa"] as? Bool
-   88|     72|        hasFiles = user?["has_files"] as? Bool
-   89|     72|        isBot = user?["is_bot"] as? Bool
-   90|     72|        presence = user?["presence"] as? String
-   91|     72|        status = user?["status"] as? String
-   92|     72|        timeZone = user?["tz"] as? String
-   93|     72|        timeZoneLabel = user?["tz_label"] as? String
-   94|     72|        timeZoneOffSet = user?["tz_offset"] as? Int
-   95|     72|        preferences = user?["prefs"] as? [String: Any]
-   96|     72|    }
+   76|     80|    public init(user: [String: Any]?) {
+   77|     80|        id = user?["id"] as? String
+   78|     80|        name = user?["name"] as? String
+   79|     80|        deleted = user?["deleted"] as? Bool
+   80|     80|        profile = Profile(profile: user?["profile"] as? [String: Any])
+   81|     80|        color = user?["color"] as? String
+   82|     80|        isAdmin = user?["is_admin"] as? Bool
+   83|     80|        isOwner = user?["is_owner"] as? Bool
+   84|     80|        isPrimaryOwner = user?["is_primary_owner"] as? Bool
+   85|     80|        isRestricted = user?["is_restricted"] as? Bool
+   86|     80|        isUltraRestricted = user?["is_ultra_restricted"] as? Bool
+   87|     80|        has2fa = user?["has_2fa"] as? Bool
+   88|     80|        hasFiles = user?["has_files"] as? Bool
+   89|     80|        isBot = user?["is_bot"] as? Bool
+   90|     80|        presence = user?["presence"] as? String
+   91|     80|        status = user?["status"] as? String
+   92|     80|        timeZone = user?["tz"] as? String
+   93|     80|        timeZoneLabel = user?["tz_label"] as? String
+   94|     80|        timeZoneOffSet = user?["tz_offset"] as? Int
+   95|     80|        preferences = user?["prefs"] as? [String: Any]
+   96|     80|    }
    97|       |
-   98|      7|    public init(id: String?) {
-   99|      7|        self.id = id
-  100|      7|        self.isBot = nil
-  101|      7|    }
+   98|      4|    public init(id: String?) {
+   99|      4|        self.id = id
+  100|      4|        self.isBot = nil
+  101|      4|    }
   102|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/UserGroup.swift:
@@ -1868,26 +1868,26 @@
    40|       |    public var users: [String]?
    41|       |    public var userCount: Int?
    42|       |
-   43|      7|    public init(userGroup: [String: Any]?) {
-   44|      7|        id = userGroup?["id"] as? String
-   45|      7|        teamID = userGroup?["team_id"] as? String
-   46|      7|        isUserGroup = userGroup?["is_usergroup"] as? Bool
-   47|      7|        name = userGroup?["name"] as? String
-   48|      7|        description = userGroup?["description"] as? String
-   49|      7|        handle = userGroup?["handle"] as? String
-   50|      7|        isExternal = userGroup?["is_external"] as? Bool
-   51|      7|        dateCreated = userGroup?["date_create"] as? Int
-   52|      7|        dateUpdated = userGroup?["date_update"] as? Int
-   53|      7|        dateDeleted = userGroup?["date_delete"] as? Int
-   54|      7|        autoType = userGroup?["auto_type"] as? String
-   55|      7|        createdBy = userGroup?["created_by"] as? String
-   56|      7|        updatedBy = userGroup?["updated_by"] as? String
-   57|      7|        deletedBy = userGroup?["deleted_by"] as? String
-   58|      7|        preferences = userGroup?["prefs"] as? [String: Any]
-   59|      7|        users = userGroup?["users"] as? [String]
-   60|      7|        if let count = userGroup?["user_count"] as? String {
+   43|      4|    public init(userGroup: [String: Any]?) {
+   44|      4|        id = userGroup?["id"] as? String
+   45|      4|        teamID = userGroup?["team_id"] as? String
+   46|      4|        isUserGroup = userGroup?["is_usergroup"] as? Bool
+   47|      4|        name = userGroup?["name"] as? String
+   48|      4|        description = userGroup?["description"] as? String
+   49|      4|        handle = userGroup?["handle"] as? String
+   50|      4|        isExternal = userGroup?["is_external"] as? Bool
+   51|      4|        dateCreated = userGroup?["date_create"] as? Int
+   52|      4|        dateUpdated = userGroup?["date_update"] as? Int
+   53|      4|        dateDeleted = userGroup?["date_delete"] as? Int
+   54|      4|        autoType = userGroup?["auto_type"] as? String
+   55|      4|        createdBy = userGroup?["created_by"] as? String
+   56|      4|        updatedBy = userGroup?["updated_by"] as? String
+   57|      4|        deletedBy = userGroup?["deleted_by"] as? String
+   58|      4|        preferences = userGroup?["prefs"] as? [String: Any]
+   59|      4|        users = userGroup?["users"] as? [String]
+   60|      4|        if let count = userGroup?["user_count"] as? String {
    61|      0|            userCount = Int(count)
-   62|      7|        }
-   63|      7|    }
+   62|      4|        }
+   63|      4|    }
    64|       |}
 
