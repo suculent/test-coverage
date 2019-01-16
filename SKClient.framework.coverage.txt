@@ -181,18 +181,18 @@
   181|      4|    }
   182|       |
   183|       |    // MARK: - Client setup
-  184|     10|    open func initialSetup(JSON: [String: Any]) {
-  185|     10|        team = Team(team: JSON["team"] as? [String: Any])
-  186|     10|        authenticatedUser = User(user: JSON["self"] as? [String: Any])
-  187|     10|        authenticatedUser?.doNotDisturbStatus = DoNotDisturbStatus(status: JSON["dnd"] as? [String: Any])
-  188|     70|        enumerateObjects(JSON["users"] as? Array) { (user) in self.addUser(user) }
-  189|     80|        enumerateObjects(JSON["channels"] as? Array) { (channel) in self.addChannel(channel) }
-  190|     10|        enumerateObjects(JSON["groups"] as? Array) { (group) in self.addChannel(group) }
-  191|     10|        enumerateObjects(JSON["mpims"] as? Array) { (mpim) in self.addChannel(mpim) }
-  192|     60|        enumerateObjects(JSON["ims"] as? Array) { (ims) in self.addChannel(ims) }
-  193|    150|        enumerateObjects(JSON["bots"] as? Array) { (bots) in self.addBot(bots) }
-  194|     10|        enumerateSubteams(JSON["subteams"] as? [String: Any])
-  195|     10|    }
+  184|      8|    open func initialSetup(JSON: [String: Any]) {
+  185|      8|        team = Team(team: JSON["team"] as? [String: Any])
+  186|      8|        authenticatedUser = User(user: JSON["self"] as? [String: Any])
+  187|      8|        authenticatedUser?.doNotDisturbStatus = DoNotDisturbStatus(status: JSON["dnd"] as? [String: Any])
+  188|     56|        enumerateObjects(JSON["users"] as? Array) { (user) in self.addUser(user) }
+  189|     64|        enumerateObjects(JSON["channels"] as? Array) { (channel) in self.addChannel(channel) }
+  190|      8|        enumerateObjects(JSON["groups"] as? Array) { (group) in self.addChannel(group) }
+  191|      8|        enumerateObjects(JSON["mpims"] as? Array) { (mpim) in self.addChannel(mpim) }
+  192|     48|        enumerateObjects(JSON["ims"] as? Array) { (ims) in self.addChannel(ims) }
+  193|    120|        enumerateObjects(JSON["bots"] as? Array) { (bots) in self.addBot(bots) }
+  194|      8|        enumerateSubteams(JSON["subteams"] as? [String: Any])
+  195|      8|    }
   196|       |
   197|      0|    private func messageDispatcher(_ event: Event) {
   198|      0|        guard let value = event.subtype, let subtype = MessageSubtype(rawValue:value) else {

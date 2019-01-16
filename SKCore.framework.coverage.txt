@@ -370,11 +370,11 @@
    27|       |    public var name: String?
    28|       |    public var icons: [String: Any]?
    29|       |
-   30|    154|    public init(bot: [String: Any]?) {
-   31|    154|        id = bot?["id"] as? String
-   32|    154|        name = bot?["name"] as? String
-   33|    154|        icons = bot?["icons"] as? [String: Any]
-   34|    154|    }
+   30|    124|    public init(bot: [String: Any]?) {
+   31|    124|        id = bot?["id"] as? String
+   32|    124|        name = bot?["name"] as? String
+   33|    124|        icons = bot?["icons"] as? [String: Any]
+   34|    124|    }
    35|       |
    36|      0|    public init(botUser: [String: Any]?) {
    37|      0|        id = botUser?["bot_user_id"] as? String
@@ -433,34 +433,34 @@
    48|       |    public var usersTyping = [String]()
    49|       |    public var messages = [String: Message]()
    50|       |
-   51|    140|    public init(channel: [String: Any]?) {
-   52|    140|        id = channel?["id"] as? String
-   53|    140|        name = channel?["name"] as? String
-   54|    140|        created = channel?["created"] as? Int
-   55|    140|        creator = channel?["creator"] as? String
-   56|    140|        isArchived = channel?["is_archived"] as? Bool
-   57|    140|        isGeneral = channel?["is_general"] as? Bool
-   58|    140|        isGroup = channel?["is_group"] as? Bool
-   59|    140|        isIM = channel?["is_im"] as? Bool
-   60|    140|        isMPIM = channel?["is_mpim"] as? Bool
-   61|    140|        isUserDeleted = channel?["is_user_deleted"] as? Bool
-   62|    140|        user = channel?["user"] as? String
-   63|    140|        isOpen = channel?["is_open"] as? Bool
-   64|    140|        topic = Topic(topic: channel?["topic"] as? [String: Any])
-   65|    140|        purpose = Topic(topic: channel?["purpose"] as? [String: Any])
-   66|    140|        isMember = channel?["is_member"] as? Bool
-   67|    140|        lastRead = channel?["last_read"] as? String
-   68|    140|        unread = channel?["unread_count"] as? Int
-   69|    140|        unreadCountDisplay = channel?["unread_count_display"] as? Int
-   70|    140|        hasPins = channel?["has_pins"] as? Bool
-   71|    140|        members = channel?["members"] as? [String]
-   72|    140|
-   73|    140|        if let latestMesssageDictionary = channel?["latest"] as? [String: Any] {
+   51|    112|    public init(channel: [String: Any]?) {
+   52|    112|        id = channel?["id"] as? String
+   53|    112|        name = channel?["name"] as? String
+   54|    112|        created = channel?["created"] as? Int
+   55|    112|        creator = channel?["creator"] as? String
+   56|    112|        isArchived = channel?["is_archived"] as? Bool
+   57|    112|        isGeneral = channel?["is_general"] as? Bool
+   58|    112|        isGroup = channel?["is_group"] as? Bool
+   59|    112|        isIM = channel?["is_im"] as? Bool
+   60|    112|        isMPIM = channel?["is_mpim"] as? Bool
+   61|    112|        isUserDeleted = channel?["is_user_deleted"] as? Bool
+   62|    112|        user = channel?["user"] as? String
+   63|    112|        isOpen = channel?["is_open"] as? Bool
+   64|    112|        topic = Topic(topic: channel?["topic"] as? [String: Any])
+   65|    112|        purpose = Topic(topic: channel?["purpose"] as? [String: Any])
+   66|    112|        isMember = channel?["is_member"] as? Bool
+   67|    112|        lastRead = channel?["last_read"] as? String
+   68|    112|        unread = channel?["unread_count"] as? Int
+   69|    112|        unreadCountDisplay = channel?["unread_count_display"] as? Int
+   70|    112|        hasPins = channel?["has_pins"] as? Bool
+   71|    112|        members = channel?["members"] as? [String]
+   72|    112|
+   73|    112|        if let latestMesssageDictionary = channel?["latest"] as? [String: Any] {
    74|      0|            latest = Message(dictionary: latestMesssageDictionary)
-   75|    140|        } else {
-   76|    140|            latest = Message(ts: channel?["latest"] as? String)
-   77|    140|        }
-   78|    140|    }
+   75|    112|        } else {
+   76|    112|            latest = Message(ts: channel?["latest"] as? String)
+   77|    112|        }
+   78|    112|    }
    79|       |
    80|      4|    public init(id: String?) {
    81|      4|        self.id = id
@@ -566,14 +566,14 @@
    38|      4|        }
    39|      4|    }
    40|       |
-   41|     80|    public init(customFields: [String: Any]?) {
-   42|     80|        if let customFields = customFields {
+   41|     64|    public init(customFields: [String: Any]?) {
+   42|     64|        if let customFields = customFields {
    43|      0|            for key in customFields.keys {
    44|      0|                let cpf = CustomProfileField(field: customFields[key] as? [String: Any])
    45|      0|                self.fields[key] = cpf
    46|      0|            }
-   47|     80|        }
-   48|     80|    }
+   47|     64|        }
+   48|     64|    }
    49|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/CustomProfileField.swift:
@@ -674,13 +674,13 @@
    28|       |    public var snoozeEnabled: Bool?
    29|       |    public var snoozeEndtime: Int?
    30|       |
-   31|     14|    public init(status: [String: Any]?) {
-   32|     14|        enabled = status?["dnd_enabled"] as? Bool
-   33|     14|        nextDoNotDisturbStart = status?["next_dnd_start_ts"] as? Int
-   34|     14|        nextDoNotDisturbEnd = status?["next_dnd_end_ts"] as? Int
-   35|     14|        snoozeEnabled = status?["snooze_enabled"] as? Bool
-   36|     14|        snoozeEndtime = status?["snooze_endtime"] as? Int
-   37|     14|    }
+   31|     12|    public init(status: [String: Any]?) {
+   32|     12|        enabled = status?["dnd_enabled"] as? Bool
+   33|     12|        nextDoNotDisturbStart = status?["next_dnd_start_ts"] as? Int
+   34|     12|        nextDoNotDisturbEnd = status?["next_dnd_end_ts"] as? Int
+   35|     12|        snoozeEnabled = status?["snooze_enabled"] as? Bool
+   36|     12|        snoozeEndtime = status?["snooze_endtime"] as? Int
+   37|     12|    }
    38|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Edited.swift:
@@ -973,13 +973,13 @@
    30|       |}
    31|       |
    32|       |public extension UInt64 {
-   33|     12|    static var nanosecondsPerSecond: UInt64 {
-   34|     12|        #if os(Linux)
-   35|     12|            return UInt64(CLOCKS_PER_SEC)
-   36|     12|        #else
-   37|     12|            return NSEC_PER_SEC
-   38|     12|        #endif
-   39|     12|    }
+   33|     16|    static var nanosecondsPerSecond: UInt64 {
+   34|     16|        #if os(Linux)
+   35|     16|            return UInt64(CLOCKS_PER_SEC)
+   36|     16|        #else
+   37|     16|            return NSEC_PER_SEC
+   38|     16|        #endif
+   39|     16|    }
    40|       |}
    41|       |
    42|     10|public func filterNilParameters(_ parameters: [String: Any?]) -> [String: Any] {
@@ -1379,22 +1379,22 @@
    87|     12|        deleteOriginal = dictionary?["delete_original"] as? Bool
    88|     12|    }
    89|       |
-   90|    140|    public init(ts: String?) {
-   91|    140|        self.ts = ts
-   92|    140|        threadTs = nil
-   93|    140|        parentUserId = nil
-   94|    140|        subtype = nil
-   95|    140|        user = nil
-   96|    140|        channel = nil
-   97|    140|        botID = nil
-   98|    140|        username = nil
-   99|    140|        icons = nil
-  100|    140|        deletedTs = nil
-  101|    140|        upload = nil
-  102|    140|        itemType = nil
-  103|    140|        comment = nil
-  104|    140|        file = nil
-  105|    140|    }
+   90|    112|    public init(ts: String?) {
+   91|    112|        self.ts = ts
+   92|    112|        threadTs = nil
+   93|    112|        parentUserId = nil
+   94|    112|        subtype = nil
+   95|    112|        user = nil
+   96|    112|        channel = nil
+   97|    112|        botID = nil
+   98|    112|        username = nil
+   99|    112|        icons = nil
+  100|    112|        deletedTs = nil
+  101|    112|        upload = nil
+  102|    112|        itemType = nil
+  103|    112|        comment = nil
+  104|    112|        file = nil
+  105|    112|    }
   106|       |
   107|      0|    public static func == (lhs: Message, rhs: Message) -> Bool {
   108|      0|        return lhs.ts == rhs.ts && lhs.threadTs == rhs.threadTs && lhs.user == rhs.user && lhs.text == rhs.text
@@ -1626,17 +1626,17 @@
    32|       |    public var plan: String?
    33|       |    public var icon: TeamIcon?
    34|       |
-   35|     10|    public init(team: [String: Any]?) {
-   36|     10|        id = team?["id"] as? String
-   37|     10|        name = team?["name"] as? String
-   38|     10|        domain = team?["domain"] as? String
-   39|     10|        emailDomain = team?["email_domain"] as? String
-   40|     10|        messageEditWindowMinutes = team?["msg_edit_window_mins"] as? Int
-   41|     10|        overStorageLimit = team?["over_storage_limit"] as? Bool
-   42|     10|        prefs = team?["prefs"] as? [String: Any]
-   43|     10|        plan = team?["plan"] as? String
-   44|     10|        icon = TeamIcon(icon: team?["icon"] as? [String: Any])
-   45|     10|    }
+   35|      8|    public init(team: [String: Any]?) {
+   36|      8|        id = team?["id"] as? String
+   37|      8|        name = team?["name"] as? String
+   38|      8|        domain = team?["domain"] as? String
+   39|      8|        emailDomain = team?["email_domain"] as? String
+   40|      8|        messageEditWindowMinutes = team?["msg_edit_window_mins"] as? Int
+   41|      8|        overStorageLimit = team?["over_storage_limit"] as? Bool
+   42|      8|        prefs = team?["prefs"] as? [String: Any]
+   43|      8|        plan = team?["plan"] as? String
+   44|      8|        icon = TeamIcon(icon: team?["icon"] as? [String: Any])
+   45|      8|    }
    46|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/TeamIcon.swift:
@@ -1673,16 +1673,16 @@
    31|       |    public var imageOriginal: String?
    32|       |    public var imageDefault: Bool?
    33|       |
-   34|     10|    public init(icon: [String: Any]?) {
-   35|     10|        image34 = icon?["image_34"] as? String
-   36|     10|        image44 = icon?["image_44"] as? String
-   37|     10|        image68 = icon?["image_68"] as? String
-   38|     10|        image88 = icon?["image_88"] as? String
-   39|     10|        image102 = icon?["image_102"] as? String
-   40|     10|        image132 = icon?["image_132"] as? String
-   41|     10|        imageOriginal = icon?["image_original"] as? String
-   42|     10|        imageDefault = icon?["image_default"] as? Bool
-   43|     10|    }
+   34|      8|    public init(icon: [String: Any]?) {
+   35|      8|        image34 = icon?["image_34"] as? String
+   36|      8|        image44 = icon?["image_44"] as? String
+   37|      8|        image68 = icon?["image_68"] as? String
+   38|      8|        image88 = icon?["image_88"] as? String
+   39|      8|        image102 = icon?["image_102"] as? String
+   40|      8|        image132 = icon?["image_132"] as? String
+   41|      8|        imageOriginal = icon?["image_original"] as? String
+   42|      8|        imageDefault = icon?["image_default"] as? Bool
+   43|      8|    }
    44|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/Topic.swift:
@@ -1714,11 +1714,11 @@
    26|       |    public let creator: String?
    27|       |    public let lastSet: Int?
    28|       |
-   29|    280|    public init(topic: [String: Any]?) {
-   30|    280|        value = topic?["value"] as? String
-   31|    280|        creator = topic?["creator"] as? String
-   32|    280|        lastSet = topic?["last_set"] as? Int
-   33|    280|    }
+   29|    223|    public init(topic: [String: Any]?) {
+   30|    223|        value = topic?["value"] as? String
+   31|    223|        creator = topic?["creator"] as? String
+   32|    223|        lastSet = topic?["last_set"] as? Int
+   33|    223|    }
    34|       |}
 
 /Users/deleted/Desktop/SB/01 - Prep/XCode/UIPasteboard/Pods/SKCore/Sources/SKCore/User.swift:
@@ -1759,19 +1759,19 @@
    35|       |        public var image192: String?
    36|       |        public var customProfile: CustomProfile?
    37|       |
-   38|     80|        public init(profile: [String: Any]?) {
-   39|     80|            firstName = profile?["first_name"] as? String
-   40|     80|            lastName = profile?["last_name"] as? String
-   41|     80|            realName = profile?["real_name"] as? String
-   42|     80|            email = profile?["email"] as? String
-   43|     80|            phone = profile?["phone"] as? String
-   44|     80|            image24 = profile?["image_24"] as? String
-   45|     80|            image32 = profile?["image_32"] as? String
-   46|     80|            image48 = profile?["image_48"] as? String
-   47|     80|            image72 = profile?["image_72"] as? String
-   48|     80|            image192 = profile?["image_192"] as? String
-   49|     80|            customProfile = CustomProfile(customFields: profile?["fields"] as? [String: Any])
-   50|     80|        }
+   38|     64|        public init(profile: [String: Any]?) {
+   39|     64|            firstName = profile?["first_name"] as? String
+   40|     64|            lastName = profile?["last_name"] as? String
+   41|     64|            realName = profile?["real_name"] as? String
+   42|     64|            email = profile?["email"] as? String
+   43|     64|            phone = profile?["phone"] as? String
+   44|     64|            image24 = profile?["image_24"] as? String
+   45|     64|            image32 = profile?["image_32"] as? String
+   46|     64|            image48 = profile?["image_48"] as? String
+   47|     64|            image72 = profile?["image_72"] as? String
+   48|     64|            image192 = profile?["image_192"] as? String
+   49|     64|            customProfile = CustomProfile(customFields: profile?["fields"] as? [String: Any])
+   50|     64|        }
    51|       |    }
    52|       |
    53|       |    public let id: String?
@@ -1797,27 +1797,27 @@
    73|       |    // Client properties
    74|       |    public var userGroups: [String: String]?
    75|       |
-   76|     80|    public init(user: [String: Any]?) {
-   77|     80|        id = user?["id"] as? String
-   78|     80|        name = user?["name"] as? String
-   79|     80|        deleted = user?["deleted"] as? Bool
-   80|     80|        profile = Profile(profile: user?["profile"] as? [String: Any])
-   81|     80|        color = user?["color"] as? String
-   82|     80|        isAdmin = user?["is_admin"] as? Bool
-   83|     80|        isOwner = user?["is_owner"] as? Bool
-   84|     80|        isPrimaryOwner = user?["is_primary_owner"] as? Bool
-   85|     80|        isRestricted = user?["is_restricted"] as? Bool
-   86|     80|        isUltraRestricted = user?["is_ultra_restricted"] as? Bool
-   87|     80|        has2fa = user?["has_2fa"] as? Bool
-   88|     80|        hasFiles = user?["has_files"] as? Bool
-   89|     80|        isBot = user?["is_bot"] as? Bool
-   90|     80|        presence = user?["presence"] as? String
-   91|     80|        status = user?["status"] as? String
-   92|     80|        timeZone = user?["tz"] as? String
-   93|     80|        timeZoneLabel = user?["tz_label"] as? String
-   94|     80|        timeZoneOffSet = user?["tz_offset"] as? Int
-   95|     80|        preferences = user?["prefs"] as? [String: Any]
-   96|     80|    }
+   76|     64|    public init(user: [String: Any]?) {
+   77|     64|        id = user?["id"] as? String
+   78|     64|        name = user?["name"] as? String
+   79|     64|        deleted = user?["deleted"] as? Bool
+   80|     64|        profile = Profile(profile: user?["profile"] as? [String: Any])
+   81|     64|        color = user?["color"] as? String
+   82|     64|        isAdmin = user?["is_admin"] as? Bool
+   83|     64|        isOwner = user?["is_owner"] as? Bool
+   84|     64|        isPrimaryOwner = user?["is_primary_owner"] as? Bool
+   85|     64|        isRestricted = user?["is_restricted"] as? Bool
+   86|     64|        isUltraRestricted = user?["is_ultra_restricted"] as? Bool
+   87|     64|        has2fa = user?["has_2fa"] as? Bool
+   88|     64|        hasFiles = user?["has_files"] as? Bool
+   89|     64|        isBot = user?["is_bot"] as? Bool
+   90|     64|        presence = user?["presence"] as? String
+   91|     64|        status = user?["status"] as? String
+   92|     64|        timeZone = user?["tz"] as? String
+   93|     64|        timeZoneLabel = user?["tz_label"] as? String
+   94|     64|        timeZoneOffSet = user?["tz_offset"] as? Int
+   95|     64|        preferences = user?["prefs"] as? [String: Any]
+   96|     64|    }
    97|       |
    98|      4|    public init(id: String?) {
    99|      4|        self.id = id

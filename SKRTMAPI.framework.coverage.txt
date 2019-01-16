@@ -35,11 +35,11 @@
    34|     10|    public required init() {}
    35|       |
    36|       |    // MARK: - RTM
-   37|     10|    public func connect(url: URL) {
-   38|     10|        self.webSocket = WebSocket(url: url)
-   39|     10|        self.webSocket?.delegate = self
-   40|     10|        self.webSocket?.connect()
-   41|     10|    }
+   37|      8|    public func connect(url: URL) {
+   38|      8|        self.webSocket = WebSocket(url: url)
+   39|      8|        self.webSocket?.delegate = self
+   40|      8|        self.webSocket?.connect()
+   41|      8|    }
    42|       |
    43|      0|    public func disconnect() {
    44|      0|        webSocket?.disconnect()
@@ -57,9 +57,9 @@
    56|      0|    }
    57|       |
    58|       |    // MARK: - WebSocketDelegate
-   59|      6|    public func websocketDidConnect(socket: WebSocketClient) {
-   60|      6|        delegate?.didConnect()
-   61|      6|    }
+   59|      8|    public func websocketDidConnect(socket: WebSocketClient) {
+   60|      8|        delegate?.didConnect()
+   61|      8|    }
    62|       |
    63|      0|    public func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
    64|      0|        webSocket = nil
@@ -167,8 +167,8 @@
    85|     10|                presenceSub: options.presenceSub,
    86|     10|                simpleLatest: options.simpleLatest,
    87|     10|                success: {(response) in
-   88|     10|                    self.connectWithResponse(response)
-   89|     10|                }, failure: { (error) in
+   88|      8|                    self.connectWithResponse(response)
+   89|      8|                }, failure: { (error) in
    90|     10|                    self.adapter?.connectionClosed(with: error, instance: self)
    91|     10|                }
    92|     10|            )
@@ -249,10 +249,10 @@
   167|       |    }
   168|       |
   169|       |    // MARK: - RTM Ping
-  170|      6|    private func pingRTMServer() {
-  171|      6|        let pingInterval = Double(UInt64(options.pingInterval * Double(UInt64.nanosecondsPerSecond))) / Double(UInt64.nanosecondsPerSecond)
-  172|      6|        let delay = DispatchTime.now() + pingInterval
-  173|      6|        DispatchQueue.main.asyncAfter(deadline: delay) {
+  170|      8|    private func pingRTMServer() {
+  171|      8|        let pingInterval = Double(UInt64(options.pingInterval * Double(UInt64.nanosecondsPerSecond))) / Double(UInt64.nanosecondsPerSecond)
+  172|      8|        let delay = DispatchTime.now() + pingInterval
+  173|      8|        DispatchQueue.main.asyncAfter(deadline: delay) {
   174|      0|            guard self.connected && self.isConnectionTimedOut else {
   175|      0|                self.disconnect()
   176|      0|                return
@@ -260,7 +260,7 @@
   178|      0|            try? self.sendRTMPing()
   179|      0|            self.pingRTMServer()
   180|      0|        }
-  181|      6|    }
+  181|      8|    }
   182|       |
   183|       |    private func sendRTMPing() throws {
   184|       |        guard connected else {
@@ -292,10 +292,10 @@
   210|       |    }
   211|       |
   212|       |    // MARK: RTMDelegate
-  213|      6|    public func didConnect() {
-  214|      6|        connected = true
-  215|      6|        pingRTMServer()
-  216|      6|    }
+  213|      8|    public func didConnect() {
+  214|      8|        connected = true
+  215|      8|        pingRTMServer()
+  216|      8|    }
   217|       |
   218|      0|    public func disconnected() {
   219|      0|        connected = false

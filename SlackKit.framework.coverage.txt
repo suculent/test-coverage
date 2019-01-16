@@ -120,9 +120,9 @@
    97|       |    }
    98|       |
    99|       |    // MARK: - RTM Adapter
-  100|     10|    public func initialSetup(json: [String: Any], instance: SKRTMAPI) {
-  101|     10|        clients[instance.token]?.client?.initialSetup(JSON: json)
-  102|     10|    }
+  100|      8|    public func initialSetup(json: [String: Any], instance: SKRTMAPI) {
+  101|      8|        clients[instance.token]?.client?.initialSetup(JSON: json)
+  102|      8|    }
   103|       |
   104|      4|    public func notificationForEvent(_ event: Event, type: EventType, instance: SKRTMAPI) {
   105|      4|        let clientConnection = clients[instance.token]
